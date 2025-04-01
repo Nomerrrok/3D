@@ -880,7 +880,7 @@ namespace Draw
 		ConstBuf::Update(1, ConstBuf::drawerP);
 		ConstBuf::ConstToPixel(1);
 
-		context->DrawInstanced(quadCount * 3, instances, 0, 0);
+		context->DrawInstanced(quadCount * 6, instances, 0, 0);
 	}
 
 	void Present()
@@ -912,8 +912,8 @@ namespace Camera
 		float t = timer::frameBeginTime*.001;
 		float angle = 100;
 		float a = 3.5;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
-		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
+		XMVECTOR Eye = XMVectorSet(sin(t)*a, 2, cos(t)*a, 0.0f);
+		XMVECTOR At = XMVectorSet(0, -2, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
 		ConstBuf::camera.world[0] = XMMatrixIdentity();
@@ -945,6 +945,6 @@ void mainLoop()
 
 	Camera::Camera();
 
-	Draw::NullDrawer(80, 1);
+	Draw::NullDrawer(5, 1);
 	Draw::Present();
 }
