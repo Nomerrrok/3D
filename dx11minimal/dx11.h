@@ -880,7 +880,7 @@ namespace Draw
 		ConstBuf::Update(1, ConstBuf::drawerP);
 		ConstBuf::ConstToPixel(1);
 
-		context->DrawInstanced(quadCount * 6, instances, 0, 0);
+		context->DrawInstanced(quadCount * 3, instances, 0, 0);
 	}
 
 	void Present()
@@ -937,7 +937,7 @@ void mainLoop()
 	Draw::Clear({ 0,0,1,0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
-	Rasterizer::Cull(Rasterizer::cullmode::off);
+	Rasterizer::Cull(Rasterizer::cullmode::front);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
 	ConstBuf::ConstToVertex(4);
@@ -945,6 +945,6 @@ void mainLoop()
 
 	Camera::Camera();
 
-	Draw::NullDrawer(6, 1);
+	Draw::NullDrawer(80, 1);
 	Draw::Present();
 }

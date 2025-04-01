@@ -30,30 +30,24 @@ cbuffer params : register(b1)
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
-    float4 vpos : POSITION0;
-    float4 wpos : POSITION1;
-    float4 vnorm : NORMAL1;
+    float3 normal : NORMAL0;
     float2 uv : TEXCOORD0;
+    uint faceID : COLOR0;
+};
+
+// Цвета для 20 граней
+static const float3 faceColors[20] = {
+    {1.0, 0.2, 0.2}, {0.2, 1.0, 0.2}, {0.2, 0.2, 1.0}, {1.0, 1.0, 0.2},
+    {1.0, 0.2, 1.0}, {0.2, 1.0, 1.0}, {0.5, 0.5, 0.5}, {1.0, 0.5, 0.2},
+    {0.5, 1.0, 0.2}, {0.2, 1.0, 0.5}, {0.2, 0.5, 1.0}, {0.5, 0.2, 1.0},
+    {1.0, 0.2, 0.5}, {1.0, 0.5, 0.5}, {0.5, 1.0, 0.5}, {0.5, 0.5, 1.0},
+    {0.75, 0.25, 0.5}, {0.25, 0.75, 0.5}, {0.5, 0.25, 0.75}, {0.25, 0.5, 0.75}
 };
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    float pi = 3.141519;
 
-float3 nrml = input.vnorm.xyz;
+    float3 baseColor = faceColors[input.faceID % 20];
 
-float f = dot(float3(1, 0, 0), nrml);
-
-    //return float4(input.uv.x, 0, 0, 1);
-
-    float c = 0;
-    for (int i = 1; i < 3; i++)
-    {
-        float2 uv = 2 * ((input.uv) - .5) * pi;
-        uv += float2(sin(time.x * .13 * sin(i * .4)), sin(time.x * .12 * sin(i * .5)));
-        c += sin((atan2(uv.x, uv.y) * 12 - time.x * .3)) * (sin(1 / length(uv * 2) + 5)) * saturate(1 / pow(length(uv),3)) * 2;
-    }
-
-    return float4(c, c, c, 1.);
-
+    return float4(baseColor, 1.0);
 }
