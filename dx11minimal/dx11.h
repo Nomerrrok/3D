@@ -880,7 +880,7 @@ namespace Draw
 		ConstBuf::Update(1, ConstBuf::drawerP);
 		ConstBuf::ConstToPixel(1);
 
-		context->DrawInstanced(quadCount * 3, instances, 0, 0);
+		context->DrawInstanced(quadCount * 6, instances, 0, 0);
 	}
 
 	void Present()
@@ -945,6 +945,6 @@ void mainLoop()
 
 	Camera::Camera();
 
-	Draw::NullDrawer(80, 1);
+	Draw::NullDrawer(40, 1);
 	Draw::Present();
 }
