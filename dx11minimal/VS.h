@@ -22,6 +22,12 @@ cbuffer drawMat : register(b2)
     float hilight;
 };
 
+cbuffer objParams : register(b0)
+{
+    float gx;
+    float gy;
+};
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
@@ -42,74 +48,53 @@ float3 rotY(float3 pos, float a)
     pos = mul(pos, m);
     return pos;
 }
+float3 rotX(float3 pos, float a)
+{
+    float3x3 m =
+    {
+        1, 0, 0,
+        0, cos(a), -sin(a),
+        0, sin(a), cos(a)
+    };
+    pos = mul(pos, m);
+    return pos;
+}
+
+float3 rotZ(float3 pos, float a)
+{
+    float3x3 m =
+    {
+        cos(a), sin(a), 0,
+        -sin(a), cos(a), 0,
+        0,0, 1
+    };
+    pos = mul(pos, m);
+    return pos;
+}
+#define PI 3.1415926535897932384626433832795
 
 VS_OUTPUT VS(uint vID : SV_VertexID)
 {
     VS_OUTPUT output = (VS_OUTPUT)0;
 
-    float3 quad[36] = {
-        // ѕередн€€ грань
--1, -1,  1,
- 1, -1,  1,
--1,  1,  1,
+    float2 quad[6] = { -1,-1,1,-1,-1,1,1,-1,1,1,-1,1 };
 
- 1, -1,  1,
- 1,  1,  1,
--1,  1,  1,
-//задн€€ грань
--1, -1,-1,
- -1, 1,-1,
-  1, -1,-1,
+    float2 p = quad[vID % 6];
 
- 1, -1,-1,
- -1,  1,-1,
- 1,  1,-1,
+    int qID = vID / 6;
 
- //права€ грань
-1,-1,-1,
-1,1,-1,
-1,-1,1,
 
-1,1,-1,
-1,1,1,
-1,-1,1,
 
-//лева€ грвнь
--1,1,1,
--1,1,-1,
--1,-1,1,
+    float R = 1;
+    float r = 0.5;
 
--1,1,-1,
--1,-1,-1,
--1,-1,1,
+    float x = (qID % (uint)gx + p.x / 2.) / gx ;
+    float y = (qID / (uint)gy + p.y / 2.) / gy ;
+    float2 a = float2(x, y) * PI * 2;
+    a.x *= -1;
+    float3 pos = float3((2+cos(a.x*3)) * cos(a.x*2), -sin(a.x*3),(2+ cos(3*a.x)) * sin(2*a.x));
 
-//верхн€€ грань
-1,  1, 1,
- 1,  1, -1,
--1,  1,  1,
-
- -1,  1,  -1,
--1,  1,  1,
- 1,  1, -1,
-
- //нижн€€ грань
- -1,  -1, -1,
- 1,  -1, -1,
--1, -1,  1,
-
- 1,  -1,  1,
--1,  -1,  1,
- 1,  -1, -1
-    };
-
-    float3 p = quad[vID];
-    float4 pos = float4(quad[vID], 1);
-    
-    float4 rPos = mul(float4(0,0,1,1), view[0]);
-    output.vnorm = rPos;
-
-    output.pos = mul(pos, mul(view[0], proj[0]));
-    float2 pUV = float2(atan2(p.x,p.z)/4,p.y/2+.5);
-    output.uv = float2(1, -1) * pUV / 2. + .5;
+    output.pos = mul(float4(pos, 1), mul(view[0], proj[0]));
+    output.uv = float2(1, -1) * p;
     return output;
 }
