@@ -86,7 +86,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
 
 
     float R = 20;
-    float r = 0.2;
+    float r = 0.3;
 
     float x = (qID % (uint)gx + p.x / 2.) / gx +.5;
     float y = (qID / (uint)gy + p.y / 2.) / gy +.5 ;
