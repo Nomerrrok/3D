@@ -39,21 +39,32 @@ struct VS_OUTPUT
 float4 PS(VS_OUTPUT input) : SV_Target
 {
     float pi = 3.141519;
+    float k = 0.0005;
+    float i = 1;
 
-float3 nrml = input.vnorm.xyz;
+    float3 nrml = normalize(input.vnorm.xyz);  
+    float3 pos = input.wpos.xyz;              
 
-float f = saturate(dot(float3(1, 0, 0), nrml));
+    float3 camera = float3(3.5, 0, 0);         
+    float3 light = float3(0, 10, 0);            
 
-    return float4(f,f,f, 1);
+    float3 L = normalize(light - pos);
+    float3 V = normalize(camera - pos);        
+    float3 H = normalize(L + V);               
+ 
+    float spec = pow(saturate(dot(nrml, H)), 64);
+
+    float f = saturate(dot(float3(1, 0, 0), nrml)) + spec;
+
+    return float4(f, f, f, 1); 
 
     float c = 0;
     for (int i = 1; i < 3; i++)
     {
         float2 uv = 2 * ((input.uv) - .5) * pi;
         uv += float2(sin(time.x * .13 * sin(i * .4)), sin(time.x * .12 * sin(i * .5)));
-        c += sin((atan2(uv.x, uv.y) * 12 - time.x * .3)) * (sin(1 / length(uv * 2) + 5)) * saturate(1 / pow(length(uv),3)) * 2;
+        c += sin((atan2(uv.x, uv.y) * 12 - time.x * .3)) * (sin(1 / length(uv * 2) + 5)) * saturate(1 / pow(length(uv), 3)) * 2;
     }
 
     return float4(c, c, c, 1.);
-
 }
