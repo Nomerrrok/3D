@@ -73,6 +73,28 @@ float3 rotZ(float3 pos, float a)
 }
 #define PI 3.1415926535897932384626433832795
 
+float3 calcGeom(float2 a)
+{
+    float R = 20;
+    float r = 0.3;
+    float3 pos = float3((2 + cos(a.x * 3)) * cos(a.x * 2), -sin(a.x * 3), (2 + cos(3 * a.x)) * sin(2 * a.x));
+
+    float3 dpos = normalize(float3(-2 * (R + r * cos(3 * a.x)) * sin(2 * a.x) - 3 * r * sin(3 * a.x) * cos(2 * a.x),
+        3 * r * cos(3 * a.x),
+        2 * (R + r * cos(3 * a.x)) * cos(2 * a.x) - 3 * r * sin(3 * a.x) * sin(2 * a.x)));
+
+    float3 B = normalize(cross(dpos, float3(0, 1, 0)));
+    float3 N = normalize(cross(B, dpos));
+
+    pos = pos + r * (cos(a.y) * N + sin(a.y) * B);
+
+    pos = rotY(pos, time.x*0.1);
+
+
+    return pos;
+}
+
+
 VS_OUTPUT VS(uint vID : SV_VertexID)
 {
     VS_OUTPUT output = (VS_OUTPUT)0;
@@ -90,20 +112,23 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
 
     float x = (qID % (uint)gx + p.x / 2.) / gx +.5;
     float y = (qID / (uint)gy + p.y / 2.) / gy +.5 ;
+
+    float stepX = 1. / gx;
+    float stepY = 1. / gx;
+
     float2 a = float2(x, y) * PI * 2;
     a.x *= -1;
+    float2 a1 = a + float2(stepX,0);
+    float2 a2 = a + float2(0, stepY);
+    float3 pos = calcGeom(a);
+    float3 pos1 = calcGeom(a1);
+    float3 pos2 = calcGeom(a2);
+    float3 p02 = normalize(pos2 - pos);
+    float3 p01 = normalize(pos1 - pos);
+    float3 norm = float3(cross(p01,p02));
 
-    float3 pos = float3((2 + cos(a.x * 3)) * cos(a.x * 2), -sin(a.x * 3), (2 + cos(3 * a.x)) * sin(2 * a.x));
-
-    float3 dpos = normalize(float3(-2 * (R + r * cos(3 * a.x)) * sin(2 * a.x) - 3 * r * sin(3 * a.x) * cos(2 * a.x),
-        3 * r * cos(3 * a.x),
-        2 * (R + r * cos(3 * a.x)) * cos(2 * a.x) - 3 * r * sin(3 * a.x) * sin(2 * a.x)));
-
-    float3 B = normalize(cross(dpos, float3(0, 1, 0)));
-    float3 N = normalize(cross(B, dpos)); 
-
-    pos = pos + r * (cos(a.y) * N + sin(a.y) * B);
     output.pos = mul(float4(pos, 1), mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p;
+    output.vnorm = float4(norm,1);
     return output;
 }
