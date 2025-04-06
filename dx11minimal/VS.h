@@ -85,15 +85,29 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
 
 
 
-    float R = 1;
-    float r = 0.5;
+    float R = 20;
+    float r = 0.2;
 
-    float x = (qID % (uint)gx + p.x / 2.) / gx ;
-    float y = (qID / (uint)gy + p.y / 2.) / gy ;
+    float x = (qID % (uint)gx + p.x / 2.) / gx +.5;
+    float y = (qID / (uint)gy + p.y / 2.) / gy +.5 ;
     float2 a = float2(x, y) * PI * 2;
     a.x *= -1;
-    float3 pos = float3((2+cos(a.x*3)) * cos(a.x*2), -sin(a.x*3),(2+ cos(3*a.x)) * sin(2*a.x));
+    float3 pos = float3((2 + cos(a.x * 3)) * cos(a.x * 2), -sin(a.x * 3), (2 + cos(3 * a.x)) * sin(2 * a.x));
 
+    float3 C = float3(
+        (2 + cos(a.x * 3)) * cos(a.x * 2),
+        -sin(a.x * 3),
+        (2 + cos(3 * a.x)) * sin(2 * a.x)
+    );
+
+    float3 dpos = normalize(float3(-2 * (R + r * cos(3 * a.x)) * sin(2 * a.x) - 3 * r * sin(3 * a.x) * cos(2 * a.x),
+        3 * r * cos(3 * a.x),
+        2 * (R + r * cos(3 * a.x)) * cos(2 * a.x) - 3 * r * sin(3 * a.x) * sin(2 * a.x)));
+
+    float3 B = normalize(cross(dpos, float3(0, 1, 0)));
+    float3 N = normalize(cross(B, dpos)); 
+
+    pos = C + r * (cos(a.y) * N + sin(a.y) * B);
     output.pos = mul(float4(pos, 1), mul(view[0], proj[0]));
     output.uv = float2(1, -1) * p;
     return output;
