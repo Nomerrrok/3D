@@ -112,40 +112,41 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 B = normalize(input.bnorm.xyz);
     float3 N = normalize(input.vnorm.xyz);
 
-    float2 uv = input.uv * float2(14, 2);
+    float2 brickUV = input.uv * float2(14, 2); 
+    float2 uv = input.uv;
 
-    float3 texNormal = normal(uv) * 2.0 - 1.0;
+    float3 texNormal = normal(brickUV) * 2.0 - 1.0;
 
-    // TBN матрица
+
     float3x3 TBN = float3x3(T, B, N);
-
-    // Конечная нормаль
     float3 finalNormal = normalize(mul(texNormal, TBN));
 
     float3 N_color = N * 0.5 + 0.5;
     float3 B_color = B * 0.5 + 0.5;
     float3 T_color = T * 0.5 + 0.5;
 
-    float3 pos = input.wpos.xyz;
+    float3 baseColor = color(brickUV);
 
+    float3 pos = input.wpos.xyz;
     float3 cameraPos = float3(3.5, 0, 0);
     float3 lightPos = float3(1, 0, 0);
 
     float3 L = normalize(lightPos - pos);
     float3 V = normalize(cameraPos - pos);
     float3 H = normalize(L + V);
-    uv = input.uv;
 
-    float spec = pow(saturate(dot(finalNormal, H)), 64) * 8;
+    float NL = saturate(dot(finalNormal, L));
+    float NH = saturate(dot(finalNormal, H));
 
-    float f = saturate(dot(float3(1, 0, 0), finalNormal)) + .15 + spec;
-    float3 fragColor = f;
+    float ambient = 0.1;
+    float diffuse = NL;
+    float specular = pow(NH, 64.0) * 8.0;
 
-    // if ((input.pos.x - input.pos.y) > (aspect.x - aspect.y) / 2.0)
-     {
-        // fragColor = normal(uv);
-     }
+    float lighting = ambient + diffuse + specular;
 
-     return float4(fragColor, 1.0);
-     return float4(N_color, 1.0);
+    // Итоговый цвет
+    float3 fragColor = baseColor * lighting;
+
+    return float4(fragColor, 1.0);
+    return float4(N_color, 1.0);
 }
