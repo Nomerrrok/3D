@@ -33,12 +33,14 @@ struct VS_OUTPUT
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
     float4 vnorm : NORMAL1;
+    float4 wnorm : NORMAL2;
+    float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
 };
 
 float nrand(float2 n)
 {
-    return frac(sin(dot(n.xy, float2(12.9898, 78.233))) * 43758.5453);
+    return frac(sin(dot(n.xy, float2(19.9898, 78.233))) * 43758.5453);
 }
 
 float sincosbundle(float val)
@@ -73,6 +75,7 @@ float lum(float2 uv)
     return 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
 }
 
+
 float3 normal(float2 uv)
 {
     float r = 0.03;
@@ -105,7 +108,24 @@ float3 normal(float2 uv)
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    float3 nrml = normalize(input.vnorm.xyz);
+    float3 T = normalize(input.wnorm.xyz);
+    float3 B = normalize(input.bnorm.xyz);
+    float3 N = normalize(input.vnorm.xyz);
+
+    float2 uv = input.uv * float2(14, 2);
+
+    float3 texNormal = normal(uv) * 2.0 - 1.0;
+
+    // TBN матрица
+    float3x3 TBN = float3x3(T, B, N);
+
+    // Конечная нормаль
+    float3 finalNormal = normalize(mul(texNormal, TBN));
+
+    float3 N_color = N * 0.5 + 0.5;
+    float3 B_color = B * 0.5 + 0.5;
+    float3 T_color = T * 0.5 + 0.5;
+
     float3 pos = input.wpos.xyz;
 
     float3 cameraPos = float3(3.5, 0, 0);
@@ -114,20 +134,18 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 L = normalize(lightPos - pos);
     float3 V = normalize(cameraPos - pos);
     float3 H = normalize(L + V);
+    uv = input.uv;
 
-    float spec = pow(saturate(dot(nrml, H)), 32);
+    float spec = pow(saturate(dot(finalNormal, H)), 64) * 8;
 
-    float f = saturate(dot(float3(1, 0, 0), nrml)) + spec;
-    float xScale = 14.0;
-    float yScale = 2.0; 
+    float f = saturate(dot(float3(1, 0, 0), finalNormal)) + .15 + spec;
+    float3 fragColor = f;
 
-    float2 uv = input.uv * float2(xScale, yScale); 
-    float3 fragColor = color(uv);
+    // if ((input.pos.x - input.pos.y) > (aspect.x - aspect.y) / 2.0)
+     {
+        // fragColor = normal(uv);
+     }
 
-   // if ((input.pos.x - input.pos.y) > (aspect.x - aspect.y) / 2.0)
-    {
-       // fragColor = normal(uv);
-    }
-
-    return float4(fragColor, 1.0);
+     return float4(fragColor, 1.0);
+     return float4(N_color, 1.0);
 }
