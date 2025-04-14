@@ -36,6 +36,8 @@ struct VS_OUTPUT
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
     float4 vnorm : NORMAL1;
+    float4 wnorm : NORMAL2;
+    float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
 };
 
@@ -70,6 +72,14 @@ float3 rotZ(float3 pos, float a)
 }
 
 #define PI 3.1415926535897932384626433832795
+float length(float3 c)
+{
+    float x = c.x;
+    float y = c.y;
+    float z = c.z;
+    float l = sqrt(x * x + y * y + z * z);
+    return l;
+}
 
 float3 calcGeom(float2 a)
 {
@@ -116,7 +126,6 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     a.x *= -1.0;
     float2 a1 = a + float2(stepX * PI * 2.0, 0);
     float2 a2 = a + float2(0, stepY * PI * 2.0);
-
     float3 pos = calcGeom(a);
     float3 pos1 = calcGeom(a1);
     float3 pos2 = calcGeom(a2);
@@ -124,9 +133,34 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float3 p01 = normalize(pos1 - pos);
     float3 norm = normalize(cross(p01, p02));
 
+
+    float3 tangent;
+    float3 binormal;
+
+    float3 c1 = cross(norm, float3(0.0, 0.0, 1.0));
+    float3 c2 = cross(norm, float3(0.0, 1.0, 0.0));
+    float C2 = length(c2);
+    float C1 = length(c1);
+    if (C1 > C2)
+    {
+        tangent = c1;
+    }
+    else
+    {
+        tangent = c2;
+    }
+
+    tangent = normalize(tangent);
+
+    binormal = cross(norm, tangent);
+    binormal = normalize(binormal);
+
+
     output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
-    float2 uv = float2(x, y);  // Используем нормализованные UV-координаты для каждого фрагмента
-    output.uv = uv*8;
+    float2 uv = float2(x, y);
+    output.uv = uv * 8;
     output.vnorm = float4(norm, 1.0);
+    output.bnorm = float4(binormal, 1.0);
+    output.wnorm = float4(tangent, 1.0);
     return output;
 }
