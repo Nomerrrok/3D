@@ -108,18 +108,18 @@ float3 normal(float2 uv)
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    float3 T = normalize(input.wnorm.xyz);
-    float3 B = normalize(input.bnorm.xyz);
-    float3 N = normalize(input.vnorm.xyz);
+    float3 T = input.wnorm.xyz;
+    float3 B = input.bnorm.xyz;
+    float3 N = input.vnorm.xyz;
 
-    float2 brickUV = input.uv * float2(14, 2); 
+    float2 brickUV = input.uv * float2(14, 2);
     float2 uv = input.uv;
 
     float3 texNormal = normal(brickUV) * 2.0 - 1.0;
-
+    texNormal.z *= -1;
 
     float3x3 TBN = float3x3(T, B, N);
-    float3 finalNormal = normalize(mul(texNormal, TBN));
+    float3 finalNormal = mul(texNormal, TBN);
 
     float3 N_color = N * 0.5 + 0.5;
     float3 B_color = B * 0.5 + 0.5;
@@ -144,9 +144,10 @@ float4 PS(VS_OUTPUT input) : SV_Target
 
     float lighting = ambient + diffuse + specular;
 
+    baseColor = 1;
     // Итоговый цвет
     float3 fragColor = baseColor * lighting;
 
     return float4(fragColor, 1.0);
-    return float4(N_color, 1.0);
+    return float4(finalNormal / 2 + .5, 1.0);
 }

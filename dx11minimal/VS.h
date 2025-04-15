@@ -1,4 +1,4 @@
- cbuffer global : register(b5)
+cbuffer global : register(b5)
 {
     float4 gConst[32];
 };
@@ -99,7 +99,7 @@ float3 calcGeom(float2 a)
 
     pos += r * (cos(a.y) * N + sin(a.y) * B);
 
-    pos = rotY(pos * 0.9, time.x * 0.1);
+    pos = rotY(pos * 0.9, time.x * 0.0);
 
     return pos;
 }
@@ -129,38 +129,17 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float3 pos = calcGeom(a);
     float3 pos1 = calcGeom(a1);
     float3 pos2 = calcGeom(a2);
-    float3 p02 = normalize(pos2 - pos);
-    float3 p01 = normalize(pos1 - pos);
-    float3 norm = normalize(cross(p01, p02));
-
-
-    float3 tangent;
-    float3 binormal;
-
-    float3 c1 = cross(norm, float3(0.0, 0.0, 1.0));
-    float3 c2 = cross(norm, float3(0.0, 1.0, 0.0));
-    float C2 = length(c2);
-    float C1 = length(c1);
-    if (C1 > C2)
-    {
-        tangent = c1;
-    }
-    else
-    {
-        tangent = c2;
-    }
-
-    tangent = normalize(tangent);
-
-    binormal = cross(norm, tangent);
-    binormal = normalize(binormal);
+    float3 binormal = normalize(pos2 - pos);
+    float3 tangent = normalize(pos1 - pos);
+    float3 norm = normalize(cross(tangent, binormal));
 
 
     output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
     float2 uv = float2(x, y);
-    output.uv = uv * 8;
-    output.vnorm = float4(norm, 1.0);
-    output.bnorm = float4(binormal, 1.0);
-    output.wnorm = float4(tangent, 1.0);
+    output.uv = uv * float2(24, 8);
+    float4x4 nm = transpose(view[0]);
+    output.vnorm = mul(float4(norm, 1.0), nm);
+    output.bnorm = mul(float4(binormal, 1.0), nm);
+    output.wnorm = mul(float4(tangent, 1.0), nm);
     return output;
 }
