@@ -20,4 +20,5 @@ C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(950,25): warning C4244: '=
 C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(951,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
+  LINK : C:\Users\student-3\Source\Repos\3D\x64\Debug\dx11minimal.exe not found or not built by the last incremental link; performing full link
   dx11minimal.vcxproj -> C:\Users\student-3\Source\Repos\3D\x64\Debug\dx11minimal.exe
