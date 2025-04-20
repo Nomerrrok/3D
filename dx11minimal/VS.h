@@ -40,8 +40,6 @@ struct VS_OUTPUT
     float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
     float3 singlePos : POSITION2;
-    float2 x : x;
-    float2 y : y;
 };
 
 float3 rotY(float3 pos, float a)
@@ -139,8 +137,6 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
     pos.x += s-6;
     pos.y += t-3;
     pos *= 0.2;
-    output.x = s;
-    output.y = t;
     output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
     output.wpos = output.pos;
     float2 uv = float2(x, y);

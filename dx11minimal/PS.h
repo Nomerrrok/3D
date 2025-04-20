@@ -42,8 +42,6 @@ struct VS_OUTPUT
     float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
     float3 singlePos : POSITION2;
-    float2 x : x;
-    float2 y : y;
 
 };
 
@@ -142,8 +140,6 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 T = input.wnorm.xyz;
     float3 B = input.bnorm.xyz;
     float3 N = input.vnorm.xyz;
-    int x = input.x;
-    int y = input.y;
     //float2 brickUV = input.uv * float2(10, 10);
    // float2 uv = input.uv;
 
