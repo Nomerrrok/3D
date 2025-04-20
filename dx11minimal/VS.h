@@ -39,6 +39,9 @@ struct VS_OUTPUT
     float4 wnorm : NORMAL2;
     float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
+    float3 singlePos : POSITION2;
+    float2 x : x;
+    float2 y : y;
 };
 
 float3 rotY(float3 pos, float a)
@@ -83,7 +86,7 @@ float length(float3 c)
 
 float3 calcGeom(float2 a)
 {
-    float R = 2.0;  
+    float R = 1.0;  
 
     float3 pos = float3(
         R * cos(a.y) * cos(a.x),  
@@ -100,7 +103,7 @@ float3 calcGeom(float2 a)
     return pos;
 }
 
-VS_OUTPUT VS(uint vID : SV_VertexID)
+VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
 {
     VS_OUTPUT output = (VS_OUTPUT)0;
 
@@ -129,8 +132,17 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float3 tangent = normalize(pos1 - pos);
     float3 norm = normalize(pos);
 
+    output.singlePos = float4(pos, 1);
 
+    float s = iID % 5 * 3;
+    float t = iID % 3 * 3;
+    pos.x += s-6;
+    pos.y += t-3;
+    pos *= 0.2;
+    output.x = s;
+    output.y = t;
     output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
+    output.wpos = output.pos;
     float2 uv = float2(x, y);
     output.uv = uv * float2(3, 2);
     output.vnorm = float4(norm, 1.0);

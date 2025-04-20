@@ -583,15 +583,8 @@ namespace ConstBuf
 		XMFLOAT4 albedo;
 		float metallic;
 		float roughness;
-		float padding; 
+		XMFLOAT3 pos;
 	} ObjectParams; 
-
-	
-	struct {
-		DirectX::XMMATRIX world;
-		uint32_t index;
-		float padding[3]; 
-	} InstanceData;
 
 	int roundUp(int n, int r)
 	{
@@ -620,7 +613,6 @@ namespace ConstBuf
 		Create(buffer[4], sizeof(frame));
 		Create(buffer[5], sizeof(global));
 		Create(buffer[6], sizeof(ObjectParams)); 
-		Create(buffer[7], sizeof(InstanceData));
 	}
 
 	template <typename T>
@@ -657,11 +649,6 @@ namespace ConstBuf
 	void UpdateObjectParams()
 	{
 		context->UpdateSubresource(buffer[6], 0, NULL, &ObjectParams, 0, 0);
-	}
-
-	void UpdateInstanceData()
-	{
-		context->UpdateSubresource(buffer[7], 0, NULL, &InstanceData, 0, 0);
 	}
 
 	namespace getbyname {
@@ -898,7 +885,7 @@ namespace Draw
 		context->ClearDepthStencilView(Textures::Texture[Textures::currentRT].DepthStencilView[0], D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	void NullDrawer(int quadCount, unsigned int instances = 1)
+	void NullDrawer(int quadCount, unsigned int instances = 15)
 	{
 		ConstBuf::Update(0, ConstBuf::drawerV);
 		ConstBuf::ConstToVertex(0);
@@ -935,9 +922,9 @@ namespace Camera
 	void Camera()
 	{
 		float t = timer::frameBeginTime*.001*0;
-		float angle = 100;
+		float angle = 20;
 		float a = 3.5;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
+		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, 5, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
@@ -965,7 +952,7 @@ void mainLoop()
 	Rasterizer::Cull(Rasterizer::cullmode::off);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
-	int grid = 128;
+	int grid = 64;
 	int count = grid * grid;
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
@@ -974,6 +961,6 @@ void mainLoop()
 
 	ConstBuf::drawerV[0] = grid;
 	ConstBuf::drawerV[1] = grid;
-	Draw::NullDrawer(count, 1);
+	Draw::NullDrawer(count, 15);
 	Draw::Present();
 }
