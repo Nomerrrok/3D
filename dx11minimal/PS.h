@@ -112,46 +112,44 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 B = input.bnorm.xyz;
     float3 N = input.vnorm.xyz;
 
-    float2 brickUV = input.uv * float2(14, 2);
-    float2 uv = input.uv;
+    //float2 brickUV = input.uv * float2(10, 10);
+   // float2 uv = input.uv;
 
-    float3 texNormal = normal(brickUV) * 2.0 - 1.0;
-    texNormal.x *= -1;
+    //float3 texNormal = normal(brickUV) * 2.0 - 1.0;
 
     float3x3 TBN = float3x3(T, B, N);
-    float3 finalNormal = mul(texNormal, TBN);
+    //float3 finalNormal = mul(texNormal, TBN);
     //finalNormal = N;
-    float3x3 vm = (float3x3)view[0];
-    finalNormal = mul(finalNormal,vm);
+   // float3x3 vm = (float3x3)view[0];
+    //finalNormal = mul(finalNormal,vm);
 
     float3 N_color = N * 0.5 + 0.5;
     float3 B_color = B * 0.5 + 0.5;
     float3 T_color = T * 0.5 + 0.5;
 
-    float3 baseColor = color(brickUV);
+    //float3 baseColor = color(brickUV);
 
     float3 pos = input.wpos.xyz;
-    //float3 cameraPos = float3(3.5, 0, 0);
-    //float3 cameraPos = view[1][3].xyz;
-    float3 cameraPos = float3(0,0,1);
+    float4x4 invView = saturate(view[0]);
+    float3 cameraPos = invView._m03_m13_m23;
 
 
-    float3 lightPos = -normalize(float3(0, 1, 0));
+    float3 lightPos = normalize(float3(1, 0, 0));
 
     float3 L = normalize(lightPos - pos);
     float3 V = normalize(cameraPos - pos);
     float3 H = normalize(L + V);
-
+    float3 finalNormal = N;
     float NL = saturate(dot(finalNormal, L));
     float NH = saturate(dot(finalNormal, H));
 
-    float ambient = 0.;
+    float ambient = 0.1;
     float diffuse = NL;
     float specular = pow(NH, 64.0) * 8.0;
 
     float lighting = ambient + diffuse + specular;
 
-    //baseColor = 1;
+    float3 baseColor = 1;
     // Итоговый цвет
     float3 fragColor = baseColor * lighting;
 

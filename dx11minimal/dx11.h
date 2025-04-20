@@ -546,41 +546,56 @@ namespace Sampler
 
 namespace ConstBuf
 {
-	ID3D11Buffer* buffer[6];
+	ID3D11Buffer* buffer[8];
 
 #define constCount 32
 
-	//b0 - use "params" label in shader
-	float drawerV[constCount];//update per draw call
+	
+	float drawerV[constCount]; 
 
-	//b1 - use "params" label in shader
-	float drawerP[constCount];//update per draw call
+	
+	float drawerP[constCount]; 
 
-	//b2
+	
 	struct {
 		XMMATRIX model;
 		float hilight;
-	} drawerMat;//update per draw call
+	} drawerMat; 
 
-	//b3 
+	
 	struct {
 		XMMATRIX world[2];
 		XMMATRIX view[2];
 		XMMATRIX proj[2];
-	} camera;//update per camera set
+	} camera;
 
-	//b4
+	
 	struct {
 		XMFLOAT4 time;
 		XMFLOAT4 aspect;
-	} frame;//update per frame
+	} frame; 
 
-	//b5
-	XMFLOAT4 global[constCount];//update once on start
+	
+	XMFLOAT4 global[constCount]; 
+
+	
+	struct {
+		XMFLOAT4 albedo;
+		float metallic;
+		float roughness;
+		float padding; 
+	} ObjectParams; 
+
+	
+	struct {
+		DirectX::XMMATRIX world;
+		uint32_t index;
+		float padding[3]; 
+	} InstanceData;
 
 	int roundUp(int n, int r)
 	{
-		return 	n - (n % r) + r;
+		return n - (n % r) + r;
 	}
 
 	void Create(ID3D11Buffer*& buf, int size)
@@ -588,7 +603,7 @@ namespace ConstBuf
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
 		bd.Usage = D3D11_USAGE_DEFAULT;
-		bd.ByteWidth = roundUp(size, 16);
+		bd.ByteWidth = roundUp(size, 16); 
 		bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 		bd.CPUAccessFlags = 0;
 		bd.StructureByteStride = 16;
@@ -604,6 +619,8 @@ namespace ConstBuf
 		Create(buffer[3], sizeof(camera));
 		Create(buffer[4], sizeof(frame));
 		Create(buffer[5], sizeof(global));
+		Create(buffer[6], sizeof(ObjectParams)); 
+		Create(buffer[7], sizeof(InstanceData));
 	}
 
 	template <typename T>
@@ -619,12 +636,12 @@ namespace ConstBuf
 
 	void UpdateDrawerMat()
 	{
-		context->UpdateSubresource(ConstBuf::buffer[2], 0, NULL, &drawerMat, 0, 0);
+		context->UpdateSubresource(buffer[2], 0, NULL, &drawerMat, 0, 0);
 	}
 
 	void UpdateCamera()
 	{
-		context->UpdateSubresource(ConstBuf::buffer[3], 0, NULL, &camera, 0, 0);
+		context->UpdateSubresource(buffer[3], 0, NULL, &camera, 0, 0);
 	}
 
 	void ConstToVertex(int i)
@@ -637,11 +654,19 @@ namespace ConstBuf
 		context->PSSetConstantBuffers(i, 1, &buffer[i]);
 	}
 
+	void UpdateObjectParams()
+	{
+		context->UpdateSubresource(buffer[6], 0, NULL, &ObjectParams, 0, 0);
+	}
+
+	void UpdateInstanceData()
+	{
+		context->UpdateSubresource(buffer[7], 0, NULL, &InstanceData, 0, 0);
+	}
 
 	namespace getbyname {
 		enum { drawerV, drawerP, drawerMat, camera, frame, global };
 	}
-
 }
 
 namespace Blend

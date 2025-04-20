@@ -83,29 +83,19 @@ float length(float3 c)
 
 float3 calcGeom(float2 a)
 {
-    float R = 1.8;
-    float r = .37;
+    float R = 2.0;  
 
-    int p = 3;
-    int q = 4;
-
-    float3 pos = float3((R + cos(a.x * q)) * cos(a.x * p), -sin(a.x * q), (R + cos(a.x * q)) * sin(a.x * p));
-
-    float delta = 0.0001;
-    float2 a_dx = a + float2(delta, 0);
-    float3 pos_dx = float3((R + cos(a_dx.x * q)) * cos(a_dx.x * p), -sin(a_dx.x * q), (R + cos(a_dx.x * q)) * sin(a_dx.x * p));
-    float3 tangent = normalize(pos_dx - pos);
-
-    float3 up = float3(0, 1, 0);
-    float3 B = normalize(cross(tangent, up));
-    float3 N = normalize(cross(B, tangent));
-
-    pos += r * (cos(a.y) * N + sin(a.y) * B);
+    float3 pos = float3(
+        R * cos(a.y) * cos(a.x),  
+        R * cos(a.y) * sin(a.x),  
+        R * sin(a.y)              
+    );
 
 
-    //pos = -pos.xzy;
+    float3 norm = normalize(pos);
 
-    pos = rotY(pos * 0.9, time.x * 0.01);
+
+    pos = rotY(pos, time.x * 0.01);
 
     return pos;
 }
@@ -137,12 +127,12 @@ VS_OUTPUT VS(uint vID : SV_VertexID)
     float3 pos2 = calcGeom(a2);
     float3 binormal = normalize(pos2 - pos);
     float3 tangent = normalize(pos1 - pos);
-    float3 norm = normalize(cross(tangent, binormal));
+    float3 norm = normalize(pos);
 
 
     output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
     float2 uv = float2(x, y);
-    output.uv = uv * float2(52, 6);
+    output.uv = uv * float2(3, 2);
     output.vnorm = float4(norm, 1.0);
     output.bnorm = float4(binormal, 1.0);
     output.wnorm = float4(tangent, 1.0);
