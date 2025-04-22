@@ -1,3 +1,8 @@
+cbuffer InstanceData : register(b6)
+{
+    int index;
+};
+
 cbuffer global : register(b5)
 {
     float4 gConst[32];
@@ -36,6 +41,8 @@ struct VS_OUTPUT
     float4 wnorm : NORMAL2;
     float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
+    float3 singlePos : POSITION2;
+
 };
 
 float nrand(float2 n)
@@ -106,12 +113,33 @@ float3 normal(float2 uv)
     return (n * 0.5 + 0.5);
 }
 
+
+float3 sfMap(float3 v)
+{
+    float3 c = sign(saturate(sin(v.x * 33) / sin(v.z * 33)));
+    float3 a = c;
+    if (v.y > 0) c *= float3(1, 0, 0);
+    if (v.y <- 0) c *= float3(0, 0, 1);
+
+    if (v.x>0.5) c = a*float3(0,1,0);
+    if (v.x < -0.5) c = a * float3(0, 1, 1);
+
+    if (abs (v.x) <.5 && v.z > 0.5) c = a * float3(1, 1, 0);
+    if (abs(v.x) < .5 && v.z < -0.5) c = a * float3(1, 0, 1);
+
+    float3 lp = float3(0, 1, 0);
+
+    c += 4*pow(1 / (distance(lp, v) + .75),12);
+
+    return c;
+}
+
+
 float4 PS(VS_OUTPUT input) : SV_Target
 {
     float3 T = input.wnorm.xyz;
     float3 B = input.bnorm.xyz;
     float3 N = input.vnorm.xyz;
-
     //float2 brickUV = input.uv * float2(10, 10);
    // float2 uv = input.uv;
 
@@ -131,9 +159,10 @@ float4 PS(VS_OUTPUT input) : SV_Target
 
     float3 pos = input.wpos.xyz;
     float4x4 invView = saturate(view[0]);
-    float3 cameraPos = invView._m03_m13_m23;
+    float3 cameraPos = invView._m03_m13_m23.xyz;
 
-
+    //cameraPos.x = cameraPos+x-6;
+    //cameraPos.y = cameraPos + y-3;
     float3 lightPos = normalize(float3(1, 0, 0));
 
     float3 L = normalize(lightPos - pos);
@@ -152,6 +181,12 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 baseColor = 1;
     // Итоговый цвет
     float3 fragColor = baseColor * lighting;
+
+    float3 ref = reflect(V, N);
+    float3 env = sfMap(ref);
+    //float3 env = sfMap(N);
+
+    return float4(env,1);
 
     return float4(fragColor, 1.0);
     return float4(finalNormal / 2 + .5, 1.0);
