@@ -2,7 +2,6 @@ cbuffer InstanceData : register(b6)
 {
     int index;
 };
-#define PI 3.1415926535897932384626433832795
 
 cbuffer global : register(b5)
 {
@@ -20,7 +19,6 @@ cbuffer camera : register(b3)
     float4x4 world[2];
     float4x4 view[2];
     float4x4 proj[2];
-
 };
 
 cbuffer drawMat : register(b2)
@@ -33,7 +31,7 @@ cbuffer params : register(b1)
 {
     float r, g, b;
 };
-
+#define PI 3.1415926535897932384626433832795
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
@@ -172,53 +170,59 @@ float3 sfMap(float3 v)
 
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    // Используем серый базовый цвет
-    float3 baseColor = float3(0.5, 0.5, 0.5); // Серый цвет
+    float3 T = input.wnorm.xyz;
+    float3 B = input.bnorm.xyz;
+    float3 N = input.vnorm.xyz;
+    float3 baseColor = float3(0.5, 0.5, 0.5);
+    //float2 brickUV = input.uv * float2(10, 10);
+   // float2 uv = input.uv;
 
-    // Позиция и нормали
+    //float3 texNormal = normal(brickUV) * 2.0 - 1.0;
+
+    //float3x3 TBN = float3x3(T, B, N);
+    //float3 finalNormal = mul(texNormal, TBN);
+    //finalNormal = N;
+   // float3x3 vm = (float3x3)view[0];
+    //finalNormal = mul(finalNormal,vm);
+
+    //float3 N_color = N * 0.5 + 0.5;
+    //float3 B_color = B * 0.5 + 0.5;
+    //float3 T_color = T * 0.5 + 0.5;
+
+    //float3 baseColor = color(brickUV);
+
     float3 pos = input.wpos.xyz;
-    float3 N = normalize(input.vnorm.xyz);
     float4x4 invView = saturate(view[0]);
     float3 cameraPos = invView._m03_m13_m23.xyz;
-    float3 V = normalize(cameraPos - pos);
-    // Настроим Roughness и F0 для металличности и шероховатости
+    //cameraPos.x = cameraPos+x-6;
+    //cameraPos.y = cameraPos + y-3;
+
+    float3 lightPos = normalize(float3(1, 0, 0));
     float3 SinglePos = input.singlePos;
     float roughness = saturate(0.05 + (SinglePos.x - 1) * (1.0 - 0.05));
-    float3 F0 = lerp(0.1, 0.9, saturate((SinglePos.y - 1.0)));  // Линейная интерполяция для F0
+    float3 F0 = lerp(0.1, 0.9, saturate((SinglePos.y - 1.0)));
 
-    // Источник света
-    float3 L = normalize(float3(0, 1, 0));
-    float3 H = normalize(V + L);
-    
-    // Расчёт показателей GGX, Geometry и Fresnel
-    float NDF = DistributionGGX(N, H, roughness);
-    float G = GeometrySmith(N, V, L, roughness);
-    float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-    
-    // Отражение
-    float3 R = reflect(V, N);
-    
-    // Используем только sfMap для всех отражений
-    float3 envColor = sfMap(R);
-    
-    // Возьмем серый цвет как основной, но с добавлением эффекта отражений
-    float3 ambientDiffuse = baseColor * envColor;
-    float3 ambientSpecular = envColor * F; // Добавляем отражения для металлических объектов
-    
-    // Рассчитываем финальное освещение
-    float3 ambient = (ambientDiffuse + ambientSpecular) * 0.03;
-    
-    // Рассчитываем основной свет, основываясь на переданном источнике
-    float NdotL = max(dot(N, L), 0.0);
-    float3 radiance = 5.0; // интенсивность света
-    float3 Lo = (ambientDiffuse + (NDF * G * F) / (4.0 * max(dot(N, V), 0.001) * max(dot(N, L), 0.001))) * radiance * NdotL;
-    
-    // Суммируем основное освещение и отражения
-    float3 color = ambient + Lo * baseColor;
-    
-    // Тонмаппинг и гамма-коррекция
-    color = color / (color + 1.0);  // Логарифмическая корректировка
-    color = pow(color, 1.0 / 2.2);  // Гамма-коррекция для финального цвета
-    
-    return float4(color, 1.0);
+    float3 L = normalize(lightPos - pos);
+   float3 V = normalize(cameraPos - pos);
+    float3 H = normalize(L + V);
+    float3 finalNormal = N;
+    float NL = saturate(dot(finalNormal, L));
+    float NH = saturate(dot(finalNormal, H));
+
+    float ambient = 0.1;
+    float diffuse = NL;
+    float specular = pow(NH, 64.0) * 8.0;
+
+    float lighting = ambient + diffuse + specular;
+    // Итоговый цвет
+    float3 fragColor = baseColor * lighting;
+
+    float3 ref = reflect(V, N);
+    float3 env = sfMap(ref);
+    //float3 env = sfMap(N);
+
+    return float4(env,1);
+
+    return float4(fragColor, 1.0);
+    return float4(finalNormal / 2 + .5, 1.0);
 }
