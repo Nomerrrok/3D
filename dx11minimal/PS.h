@@ -31,7 +31,7 @@ cbuffer params : register(b1)
 {
     float r, g, b;
 };
-
+#define PI 3.1415926535897932384626433832795
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
@@ -44,6 +44,39 @@ struct VS_OUTPUT
     float3 singlePos : POSITION2;
 
 };
+
+float DistributionGGX(float3 N, float3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    return a2 / (PI * denom * denom);
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
+
+    return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx2 = GeometrySchlickGGX(NdotL, roughness);
+    return ggx1 * ggx2;
+}
+
+float3 FresnelSchlick(float cosTheta, float3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
 
 float nrand(float2 n)
 {
@@ -140,33 +173,37 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float3 T = input.wnorm.xyz;
     float3 B = input.bnorm.xyz;
     float3 N = input.vnorm.xyz;
+    float3 baseColor = float3(0.5, 0.5, 0.5);
     //float2 brickUV = input.uv * float2(10, 10);
    // float2 uv = input.uv;
 
     //float3 texNormal = normal(brickUV) * 2.0 - 1.0;
 
-    float3x3 TBN = float3x3(T, B, N);
+    //float3x3 TBN = float3x3(T, B, N);
     //float3 finalNormal = mul(texNormal, TBN);
     //finalNormal = N;
    // float3x3 vm = (float3x3)view[0];
     //finalNormal = mul(finalNormal,vm);
 
-    float3 N_color = N * 0.5 + 0.5;
-    float3 B_color = B * 0.5 + 0.5;
-    float3 T_color = T * 0.5 + 0.5;
+    //float3 N_color = N * 0.5 + 0.5;
+    //float3 B_color = B * 0.5 + 0.5;
+    //float3 T_color = T * 0.5 + 0.5;
 
     //float3 baseColor = color(brickUV);
 
     float3 pos = input.wpos.xyz;
     float4x4 invView = saturate(view[0]);
     float3 cameraPos = invView._m03_m13_m23.xyz;
-
     //cameraPos.x = cameraPos+x-6;
     //cameraPos.y = cameraPos + y-3;
+
     float3 lightPos = normalize(float3(1, 0, 0));
+    float3 SinglePos = input.singlePos;
+    float roughness = saturate(0.05 + (SinglePos.x - 1) * (1.0 - 0.05));
+    float3 F0 = lerp(0.1, 0.9, saturate((SinglePos.y - 1.0)));
 
     float3 L = normalize(lightPos - pos);
-    float3 V = normalize(cameraPos - pos);
+   float3 V = normalize(cameraPos - pos);
     float3 H = normalize(L + V);
     float3 finalNormal = N;
     float NL = saturate(dot(finalNormal, L));
@@ -177,8 +214,6 @@ float4 PS(VS_OUTPUT input) : SV_Target
     float specular = pow(NH, 64.0) * 8.0;
 
     float lighting = ambient + diffuse + specular;
-
-    float3 baseColor = 1;
     // Итоговый цвет
     float3 fragColor = baseColor * lighting;
 
