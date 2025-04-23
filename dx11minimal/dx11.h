@@ -885,7 +885,7 @@ namespace Draw
 		context->ClearDepthStencilView(Textures::Texture[Textures::currentRT].DepthStencilView[0], D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	void NullDrawer(int quadCount, unsigned int instances = 15)
+	void NullDrawer(int quadCount, unsigned int instances )
 	{
 		ConstBuf::Update(0, ConstBuf::drawerV);
 		ConstBuf::ConstToVertex(0);
@@ -922,7 +922,7 @@ namespace Camera
 	void Camera()
 	{
 		float t = timer::frameBeginTime*.001*0;
-		float angle = 20;
+		float angle = 5;
 		float a = 3.5;
 		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, 5, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);

@@ -130,14 +130,16 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
     float3 tangent = normalize(pos1 - pos);
     float3 norm = normalize(pos);
 
-    output.singlePos = float4(pos, 1);
+    float s = iID % 5;         
+    float t = iID / 5;       
+    pos.x += s * 3.0f - 6.0f;  
+    pos.y += t * 3.0f-3.f;     
+    pos *= 0.05f;
+    
+    output.singlePos = float4(s, t, 0, 1);
 
-    float s = iID % 5 * 3;
-    float t = iID % 3 * 3;
-    pos.x += s-6;
-    pos.y += t-3;
-    pos *= 0.2;
-    output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
+    output.pos = mul(mul(float4(pos, 1.0f), view[0]), proj[0]);
+    
     output.wpos = output.pos;
     float2 uv = float2(x, y);
     output.uv = uv * float2(3, 2);
