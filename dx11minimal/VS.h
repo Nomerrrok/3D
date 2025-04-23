@@ -39,7 +39,7 @@ struct VS_OUTPUT
     float4 wnorm : NORMAL2;
     float4 bnorm : NORMAL3;
     float2 uv : TEXCOORD0;
-    float3 singlePos : POSITION2;
+    float4 singlePos : POSITION2;
 };
 
 float3 rotY(float3 pos, float a)
@@ -87,16 +87,16 @@ float3 calcGeom(float2 a)
     float R = 1.0;  
 
     float3 pos = float3(
-        R * cos(a.y) * cos(a.x),  
-        R * cos(a.y) * sin(a.x),  
-        R * sin(a.y)              
+        R * cos(a.y/2) * cos(a.x),  
+        R * cos(a.y/2) * sin(a.x),  
+        R * sin(a.y/2)              
     );
 
 
     float3 norm = normalize(pos);
 
 
-    pos = rotY(pos, time.x * 0.01);
+    //pos = rotY(pos, time.x * 0.01);
 
     return pos;
 }
@@ -114,7 +114,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
     int qID = vID / 6;
 
     float x = (qID % (uint)gx + p.x * 0.5) / gx + 0.5;
-    float y = (qID / (uint)gy + p.y * 0.5) / gy + 0.5;
+    float y = (qID / (uint)gx + p.y * 0.5) / gy + 0.5;
 
     float stepX = 1.0 / gx;
     float stepY = 1.0 / gy;
@@ -129,14 +129,15 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
     float3 binormal = normalize(pos2 - pos);
     float3 tangent = normalize(pos1 - pos);
     float3 norm = normalize(pos);
+    norm = mul(norm, transpose(view[0]));
 
     float s = iID % 5;
-    float t = iID / 5;
+    float t = iID % 3;
     pos.x += s * 3.0f - 6.0f;
     pos.y += t * 3.0f - 3.f;
     pos *= 0.2f;
 
-    output.singlePos = float4(s, t, 0, 1);
+    output.singlePos = float4(s+1, t+1, 0, 1);
     output.pos = mul(mul(float4(pos, 1.0), view[0]), proj[0]);
     output.wpos = output.pos;
     float2 uv = float2(x, y);
