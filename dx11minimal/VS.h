@@ -39,7 +39,9 @@ struct VS_OUTPUT
     float4 tangent  : NORMAL2;
     float4 binormal : NORMAL3;
     float2 uv : TEXCOORD0;
-    float4 singlePos : POSITION2;
+    float2 metallic  : TEXCOORD1;
+    float4 albedo   : TEXCOORD2;
+    float2 roughness : TEXCOORD3;
 };
 
 float3 rotY(float3 pos, float a)
@@ -99,7 +101,7 @@ float3 calcGeom(float2 uv, int faceID)
     else if (faceID == 5) cubePos = float3(p.x, p.y, 1);
     else                  cubePos = float3(0, 0, 0); // fallback
     cubePos = normalize(cubePos);
-
+    return cubePos;
     cubePos= rotX(cubeToSphere(cubePos), time.x * 0.05);
     return rotY(cubeToSphere(cubePos), time.x * 0.05);
 }
@@ -130,6 +132,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
         float2(-1, -1), float2(1, -1), float2(-1, 1),
         float2(1, -1), float2(1, 1), float2(-1, 1)
     };
+
     float2 p = quad[vID % 6];
     int qID = vID / 6;
     int vg = (int)(gx * gy);
@@ -144,6 +147,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
     float2 uv1 = uv + float2(step.x, 0);
     float2 uv2 = uv + float2(0, step.y);
 
+
     float3 pos = calcGeom(uv, faceID);
     float3 pos1 = calcGeom(uv1, faceID);
     float3 pos2 = calcGeom(uv2, faceID);
@@ -153,20 +157,74 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
      binormal = normalize(binormal);
      tangent = normalize(tangent);
      normal = normalize(normal);
-
-    float s = iID % 5;
-    float t = iID % 3;
-    pos.x += s * 3.0f-6.0f;
-    pos.y += t * 3.0f-3.f;
-    pos *= 0.3f;
-
-    float4 worldPos = mul(float4(pos, 1.0), view[0]);
-    output.wpos = worldPos;
-    output.pos = mul(worldPos, proj[0]);
+     int t = iID % 5 + 1;
+     int s = (iID - t + 1) % 3 + 1;
+     pos.x = pos.x + 9;
+     pos.y = pos.y + 5;
+     pos.x = pos.x - t * 3;
+     pos.y = pos.y - s * 2.5;
+     pos *= 0.35f;
+     float3 albedo;
+     float metallic;
+     float roughness;
+     if (t == 1.0 && s == 1.0) {
+         // Золото
+         albedo = float3(1.00, 0.71, 0.29);
+         metallic = 1.0;
+         roughness = 0.3;
+     }
+     else if (t == 2.0 && s == 1.0) {
+         // Железо
+         albedo = float3(0.56, 0.57, 0.58);
+         metallic = 1.0;
+         roughness = 0.2;
+     }
+     else if (t == 3.0 && s == 1.0) {
+         // Пластик (красный)
+         albedo = float3(0.8, 0.1, 0.1);
+         metallic = 0.0;
+         roughness = 0.4;
+     }
+     else if (t == 4.0 && s == 1.0) {
+         // Резина
+         albedo = float3(0.05, 0.05, 0.05);
+         metallic = 0.0;
+         roughness = 0.9;
+     }
+     else if (t == 5.0 && s == 1.0) {
+         // Хром
+         albedo = float3(0.95, 0.95, 0.95);
+         metallic = 1.0;
+         roughness = 0.1;
+     }
+     else if (s == 2.0) {
+         // Для второго ряда - градация roughness
+         albedo = float3(0.5, 0.5, 0.8);
+         metallic = 1.0;
+         roughness = t / 5.0; // От 0.2 до 1.0
+     }
+     else if (s == 3.0) {
+         // Для третьего ряда - градация metallic
+         albedo = float3(0.7, 0.7, 0.7);
+         metallic = t / 5.0; // От 0.2 до 1.0
+         roughness = 0.4;
+     }
+     else {
+         // По умолчанию
+         albedo = float3(0.8, 0.8, 0.8);
+         metallic = 0.5;
+         roughness = 0.5;
+     }
+    
+    output.wpos = float4(pos, 1.0);
+    output.vpos = mul(float4(pos, 1.0), view[0]);
+    output.pos = mul(float4(pos, 1.0), mul(view[0],proj[0]));
     output.normal = float4(normal, 1.0);
     output.tangent = float4(tangent, 1.0);
     output.binormal = float4(binormal, 1.0);
     output.uv = uv;
-    output.singlePos = float4(s + 1, t + 1, 0, 1);
+    output.metallic = float2(metallic,1);
+    output.albedo = float4(albedo, 1);
+    output.roughness = float2(roughness, 1);
     return output;
 }
