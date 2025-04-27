@@ -31,38 +31,29 @@ cbuffer params : register(b1)
 {
     float r, g, b;
 };
+
 #define PI 3.1415926535897932384626433832795
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float4 vpos : POSITION0;
     float4 wpos : POSITION1;
-    float4 vnorm : NORMAL1;
-    float4 wnorm : NORMAL2;
-    float4 bnorm : NORMAL3;
+    float4 normal : NORMAL1;
+    float4 tangent : NORMAL2;
+    float4 binormal : NORMAL3;
     float2 uv : TEXCOORD0;
     float4 singlePos : POSITION2;
 };
 
-float GGX_PartialGeometry(float cosThetaN, float alpha) {
-    float cosTheta_sqr = saturate(cosThetaN * cosThetaN);
-    float tan2 = (1 - cosTheta_sqr) / cosTheta_sqr;
-    float GP = 2 / (1 + sqrt(1 + alpha * alpha * tan2));
-    return GP;
+float3 FresnelSchlick(float cosTheta, float3 F0)
+{
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
-float GeometrySchlickGGX(float NdotV, float roughness)
+float DistributionGGX(float3 N, float3 H, float roughness)
 {
-    float r = roughness + 1.0;
-    float k = (r * r) / 8.0;
-
-
-    return NdotV / (NdotV * (1.0 - k) + k);
-}
-
-
-float DistributionGGX(float3 N, float3 H, float a)
-{
+    float a = roughness * roughness;
     float a2 = a * a;
     float NdotH = max(dot(N, H), 0.0);
     float NdotH2 = NdotH * NdotH;
@@ -74,231 +65,230 @@ float DistributionGGX(float3 N, float3 H, float a)
     return nom / denom;
 }
 
-float3 fresnelSchlick(float cosTheta, float3 F0)
+float GeometrySchlickGGX(float NdotV, float roughness)
 {
-    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+
+    float nom = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
 }
 
-float GeometrySmith(float3 N, float3 V, float3 L, float k)
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 {
     float NdotV = max(dot(N, V), 0.0);
     float NdotL = max(dot(N, L), 0.0);
-    float ggx1 = GeometrySchlickGGX(NdotV, k);
-    float ggx2 = GeometrySchlickGGX(NdotL, k);
+    float ggx1 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx2 = GeometrySchlickGGX(NdotL, roughness);
 
     return ggx1 * ggx2;
 }
 
-float3 CookTorrance_GGX(float3 n, float3 l, float3 v, float roughness,float f0,float metallic) {
-    n = normalize(n);
-    v = normalize(v);
-    l = normalize(l);
-    float3 h = normalize(v + l);
-    float3 Lo = float3(0,0,0);
-    float albedo = (0.5, 0.5, 0.5);
-    //precompute dots
-    float NL = dot(n, l);
-    if (NL <= 0.0) return 0.0;
-    float NV = dot(n, v);
-    if (NV <= 0.0) return 0.0;
-    float NH = dot(n, h);
-    float HV = dot(h, v);
-
-    //precompute roughness square
-    float roug_sqr = roughness * roughness;
-
-    //calc coefficients
-    float NDF = DistributionGGX(n, h, roughness);
-    float G = GeometrySmith(n, v, l, roughness);
-    float3 F = fresnelSchlick(max(dot(n, v), 0.0), f0);
-    
-
-    float3 kS = F;
-    float3 kD = float(1.0) - kS;
-    kD *= 1.0 - metallic;
-    kD = 1;
-
-    float3 numerator = NDF * G * F;
-    float denominator = 4.0 * max(dot(n, v), 0.0) *max(dot(n, l), 0.0);
-    
-    denominator = max(dot(n, l), 0.0);
-
-
-    //return denominator;
-
-
-    float3 specular = numerator / max(denominator, 0.001);
-
-    // прибавляем результат к исходящей энергетической яркости Lo
-    float NdotL = max(dot(n, l), 0.0);
-    Lo += (kD * albedo / PI + specular) *  NdotL;
-    //mix
-    float3 specK = G  * F * 0.25 / NV;
-    //return specular;
-    return max(0.0, specK);
-}
-
-
-
-float nrand(float2 n)
-{
-    return frac(sin(dot(n.xy, float2(19.9898, 78.233))) * 43758.5453);
-}
-
-float sincosbundle(float val)
-{
-    return sin(cos(2. * val) + sin(4. * val) - cos(5. * val) + sin(3. * val)) * 0.05;
-}
-
-float3 color(float2 uv)
-{
-    float2 coord = floor(uv);
-    float2 gv = frac(uv);
-
-    float movingValue = -sincosbundle(coord.y) * 2.;
-
-    float offset = floor(fmod(uv.y, 2.0)) * (1.5);
-    float verticalEdge = abs(cos(uv.x + offset));
-
-    float3 brick = float3(0.45, 0.29, 0.23) - movingValue;
-
-    bool vrtEdge = step(1. - 0.01, verticalEdge) == 1.0;
-    bool hrtEdge = gv.y > (0.9) || gv.y < (0.1);
-
-    if (hrtEdge || vrtEdge)
-        return float3(0.845, 0.845, 0.845);
-
-    return brick;
-}
-
-float lum(float2 uv)
-{
-    float3 rgb = color(uv);
-    return 0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
-}
-
-
-float3 normal(float2 uv)
-{
-    float r = 0.03;
-
-    float x0 = lum(uv + float2(r, 0.0));
-    float x1 = lum(uv - float2(r, 0.0));
-    float y0 = lum(uv + float2(0.0, r));
-    float y1 = lum(uv - float2(0.0, r));
-
-    float s = 1.0;
-    float3 n = normalize(float3(x1 - x0, y1 - y0, s));
-
-    float3 p = float3(uv * 2.0 - 1.0, 0.0);
-    float3 v = float3(0.0, 0.0, 1.0);
-
-    float3 l = v - p;
-    float d_sqr = dot(l, l);
-    l *= (1.0 / sqrt(d_sqr));
-
-    float3 h = normalize(l + v);
-
-    float dot_nl = clamp(dot(n, l), 0.0, 1.0);
-    float dot_nh = clamp(dot(n, h), 0.0, 1.0);
-
-    float color = lum(uv) * pow(dot_nh, 14.0) * dot_nl * (1.0 / d_sqr);
-    color = pow(color, 1.0 / 2.2);
-
-    return (n * 0.5 + 0.5);
-}
-
-
-float3 sfMap(float3 v)
-{
-    float3 c = sign(saturate(sin(v.x * 33) / sin(v.z * 33)));
-    float3 a = c;
-    if (v.y > 0) c *= float3(1, 0, 0);
-    if (v.y <- 0) c *= float3(0, 0, 1);
-
-    if (v.x>0.5) c = a*float3(0,1,0);
-    if (v.x < -0.5) c = a * float3(0, 1, 1);
-
-    if (abs (v.x) <.5 && v.z > 0.5) c = a * float3(1, 1, 0);
-    if (abs(v.x) < .5 && v.z < -0.5) c = a * float3(1, 0, 1);
-
-    float3 lp = float3(0, 1, 0);
-
-    c += 4*pow(1 / (distance(lp, v) + .75),12);
-
-    return c;
-}
-
-
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    float3 SinglePos = input.singlePos;
-    float albedo = 1/5* SinglePos.x;
-    float3 T = input.wnorm.xyz;
-    float3 B = input.bnorm.xyz;
-    float3 N = input.vnorm.xyz;
 
-    //return float4(normalize(N.xyz), 1);
+    float s = input.singlePos.x;
+    float t = input.singlePos.y;
 
-    float3 lightDir = normalize(float3(0, 0, -1));
-    float cosTheta = dot(lightDir, N);
-    float F0 = (0.04, 0.04, 0.04);
-    float3 baseColor = float3(0.5, 0.5, 0.5);
-    //float2 brickUV = input.uv * float2(10, 10);
-   // float2 uv = input.uv;
+    float3 N = normalize(input.normal.xyz);
 
-    //float3 texNormal = normal(brickUV) * 2.0 - 1.0;
+    float3 fragPos = input.wpos.xyz;
+    float3 cameraPos = float3(view[0]._m30, view[0]._m31, view[0]._m32);
+    float3 V = normalize(cameraPos - fragPos);
+    float3 L = normalize(float3(1, 0, 0)); 
+    float3 H = normalize(V + L); 
+    float3 T = normalize(input.tangent.xyz);
+    float3 B = normalize(input.binormal.xyz);
 
-    //float3x3 TBN = float3x3(T, B, N);
-    //float3 finalNormal = mul(texNormal, TBN);
-    //finalNormal = N;
-   // float3x3 vm = (float3x3)view[0];
-    //finalNormal = mul(finalNormal,vm);
+    float3 albedo;
+    float metallic;
+    float roughness;
 
-    //float3 N_color = N * 0.5 + 0.5;
-    //float3 B_color = B * 0.5 + 0.5;
-    //float3 T_color = T * 0.5 + 0.5;
+    if (s == 1.0 && t == 1.0) {
+        // Золото
+        albedo = float3(1.00, 0.71, 0.29);
+        metallic = 1.0;
+        roughness = 0.3;
+    }
+    else if (s == 2.0 && t == 1.0) {
+        // Железо
+        albedo = float3(0.56, 0.57, 0.58);
+        metallic = 1.0;
+        roughness = 0.2;
+    }
+    else if (s == 3.0 && t == 1.0) {
+        // Пластик (красный)
+        albedo = float3(0.8, 0.1, 0.1);
+        metallic = 0.0;
+        roughness = 0.4;
+    }
+    else if (s == 4.0 && t == 1.0) {
+        // Резина
+        albedo = float3(0.05, 0.05, 0.05);
+        metallic = 0.0;
+        roughness = 0.9;
+    }
+    else if (s == 5.0 && t == 1.0) {
+        // Хром
+        albedo = float3(0.95, 0.95, 0.95);
+        metallic = 1.0;
+        roughness = 0.1;
+    }
+    else if (t == 2.0) {
+        // Для второго ряда - градация roughness
+        albedo = float3(0.5, 0.5, 0.8);
+        metallic = 1.0;
+        roughness = s / 5.0; // От 0.2 до 1.0
+    }
+    else if (t == 3.0) {
+        // Для третьего ряда - градация metallic
+        albedo = float3(0.7, 0.7, 0.7);
+        metallic = s / 5.0; // От 0.2 до 1.0
+        roughness = 0.4;
+    }
+    else {
+        // По умолчанию
+        albedo = float3(0.8, 0.8, 0.8);
+        metallic = 0.5;
+        roughness = 0.5;
+    }
 
-    //float3 baseColor = color(brickUV);
+   
+    float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
 
-    float3 pos = input.wpos.xyz;
-    float4x4 invView = saturate(view[0]);
-    float3 cameraPos = invView._m03_m13_m23.xyz;
-    //cameraPos.x = cameraPos+x-6;
-    //cameraPos.y = cameraPos + y-3;
-    float3 lightColor=(1, 1, 1);
-    //float3 lightPos = normalize(float3(0, 1, 0));
-    float distance = length(lightDir - pos);
-    float attenuation = 1.0 / (distance * distance);
-    float roughness =  1- SinglePos.y/10;
-    float3 radiance = lightColor * attenuation;
+    float cosTheta = max(dot(V, N), 0.0);
+    float3 fresnel = FresnelSchlick(cosTheta, F0);
+    return float4(cosTheta.xxx, 1.0);
 
-    float3 L = normalize(lightDir - pos);
-    float3 V = normalize(cameraPos - pos);
+  //  float3 kS = fresnel;           // Сколько отражает
+  //  float3 kD = 1.0 - kS;           // Сколько рассеивает
+  //  kD *= 1.0 - metallic;           // Металлы НЕ дают диффуза
 
-    float3 H = normalize(L + V);
-   // float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-    float metallic = SinglePos%2;
+   // float3 diffuse = albedo / PI;   // Ламбертовская модель диффуза
 
-    float3 ref = reflect(V, N);
-    float3 env = sfMap(ref);
-    //float3 env = sfMap(N);
-    float roug_sqr = roughness * roughness;
-    //float3 G = CookTorrance_GGX(N, L, V ,roughness,F0, metallic);
-    float3 G = CookTorrance_GGX(N, lightDir, V, 0, 1, 1);
-    float3 OutColor =  G;
-   // float3 p = CookTorrance_GGX(N, L, V, roughness, F0);
-    
+  //  float3 finalColor = kD * diffuse + kS;
 
-    //OutColor = dot(N, lightDir);
-
-    
-    //return float4(frac(input.uv * 8), 0, 1);
-    
-    return float4(OutColor,1);
-
-
-
-  //  return float4(p,p,p, 1.0);
-    return float4(N / 2 + .5, 1.0);
+    // float3 N_color = H * 0.5 + 0.5;
+   //return float4(N_color, 1);
+    // float ao = 1.0; // Ambient occlusion
+ //   // F0 - базовый коэффициент отражения при нулевом угле
+ //   float3 F0 = float3(0.04, 0.04, 0.04);
+ //   F0 = lerp(F0, albedo, metallic);
+ //
+ //   float3 radiance = float3(1.0, 1.0, 1.0); // Интенсивность света
+ //
+ //   // BRDF (Bidirectional Reflectance Distribution Function)
+ //   float NDF = DistributionGGX(N, H, roughness);
+ //   float G = GeometrySmith(N, V, L, roughness);
+ //   float edgeFactor = 1.5; 
+ //   float3 F = F0 + (1.0 - F0) * pow(1.0 - max(dot(H, V), 0.0), 5.0) * edgeFactor;
+ //
+ //   float3 kS = F; // Коэффициент зеркального отражения
+ //   float3 kD = float3(1.0, 1.0, 1.0) - kS; // Коэффициент диффузного отражения
+ //   kD *= 1.0 - metallic;
+ //
+ //   float3 numerator = NDF * G * F;
+ //   float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+ //   float3 specular = numerator / denominator;
+ //
+ //   // Угол между нормалью и светом
+ //   float NdotL = max(dot(N, L), 0.0);
+ //
+ //   // Итоговый цвет
+ //   float3 Lo = (kD * albedo / PI + specular) * radiance * NdotL;
+ //
+ //   // Ambient
+ //   float3 ambient = float3(0.09, 0.09, 0.09) * albedo * ao;
+ //
+ //   float3 color = ambient + Lo;
+ //
+ //   // Тоновая коррекция (tone mapping)
+ //   color = color / (color + float3(1.0, 1.0, 1.0));
+ //   // Гамма-коррекция
+ //   float gamma = 1.6;
+ //   color.rgb = pow(color.rgb, float3(1.0 / gamma, 1.0 / gamma, 1.0 / gamma));
+//    return float4(color, 1.0);
 }
+
+
+   // float3 fragPos = input.wpos.xyz;
+   // float3 lightDir = float3(0, 1, 0);
+   // float3  lightColor = float3(23.47, 21.31, 20.79);
+   // float3  Wi = normalize(lightDir - fragPos);
+   // float cosTheta = max(dot(N, Wi), 0.0);
+   // float attenuation = calculateAttenuation(fragPos, lightDir);
+   // float3 radiance = lightColor * attenuation * cosTheta;
+   // float3 L = normalize(lightDir - WorldPos);
+   // float3 H = normalize(V + L);
+   // float3 N_color = T * 0.5 + 0.5;
+   // //return float4(N_color , 1.0);
+   // float3 metalness = float3(0, 0, 0);
+   // float3 F0 = float3(0.04, 0.04, 0.04);
+   // float3 surfaceColor=(1,0,0)
+   // F0 = mix(F0, surfaceColor.rgb, metalness);
+   // float3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+  //  //return float4(normalize(N.xyz), 1);
+  //
+  //  float3 lightDir = normalize(float3(0, 0, -1));
+  //  float cosTheta = dot(lightDir, N);
+  //  float F0 = (0.04, 0.04, 0.04);
+  //  float3 baseColor = float3(0.5, 0.5, 0.5);
+  //  //float2 brickUV = input.uv * float2(10, 10);
+  // // float2 uv = input.uv;
+  //
+  //  //float3 texNormal = normal(brickUV) * 2.0 - 1.0;
+  //
+  //  //float3x3 TBN = float3x3(T, B, N);
+  //  //float3 finalNormal = mul(texNormal, TBN);
+  //  //finalNormal = N;
+  // // float3x3 vm = (float3x3)view[0];
+  //  //finalNormal = mul(finalNormal,vm);
+  //
+  //  float3 N_color = B * 0.5 + 0.5;
+  //  //float3 B_color = B * 0.5 + 0.5;
+  //  //float3 T_color = T * 0.5 + 0.5;
+  //
+  //  //float3 baseColor = color(brickUV);
+  //
+  //  float3 pos = input.wpos.xyz;
+  //  float4x4 invView = saturate(view[0]);
+  //  float3 cameraPos = invView._m03_m13_m23.xyz;
+  //  //cameraPos.x = cameraPos+x-6;
+  //  //cameraPos.y = cameraPos + y-3;
+  //  float3 lightColor=(1, 1, 1);
+  //  //float3 lightPos = normalize(float3(0, 1, 0));
+  //  float distance = length(lightDir - pos);
+  //  float attenuation = 1.0 / (distance * distance);
+  //  float roughness =  1- SinglePos.y/10;
+  //  float3 radiance = lightColor * attenuation;
+  //
+  //  float3 L = normalize(lightDir - pos);
+  //  float3 V = normalize(cameraPos - pos);
+  //
+  //  float3 H = normalize(L + V);
+  // // float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+  //  float metallic = SinglePos%2;
+  //
+  //  float3 ref = reflect(V, N);
+  //  float3 env = sfMap(ref);
+  //  //float3 env = sfMap(N);
+  //  float roug_sqr = roughness * roughness;
+  //  //float3 G = CookTorrance_GGX(N, L, V ,roughness,F0, metallic);
+  //  float3 G = CookTorrance_GGX(N, lightDir, V, 0, 1, 1);
+  //  float3 OutColor =  G;
+  // // float3 p = CookTorrance_GGX(N, L, V, roughness, F0);
+  //  
+  //
+  //  OutColor = dot(N, lightDir);
+  //
+  //  
+  //  //return float4(frac(input.uv * 8), 0, 1);
+  //  
+  //  //return float4(N_color,1);
+  //
+  //
+  //
+  ////  return float4(p,p,p, 1.0);
+  //  return float4(N / 2 + .5, 1.0);
