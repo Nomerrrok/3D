@@ -1,20 +1,20 @@
 ﻿  dx11minimal.cpp
-C:\Users\artem\source\repos\3D3\dx11minimal\dx11.h(864,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(864,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\artem\source\repos\3D3\dx11minimal\dx11.h(864,77): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(864,77): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\artem\source\repos\3D3\dx11minimal\dx11.h(924,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(924,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\artem\source\repos\3D3\dx11minimal\dx11.h(927,36): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(927,36): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\artem\source\repos\3D3\dx11minimal\dx11.h(962,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(962,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\artem\source\repos\3D3\dx11minimal\dx11.h(963,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(963,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-  dx11minimal.vcxproj -> C:\Users\artem\Source\Repos\3D3\x64\Debug\dx11minimal.exe
+  dx11minimal.vcxproj -> C:\Users\student-3\Source\Repos\3D\x64\Debug\dx11minimal.exe

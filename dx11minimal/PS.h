@@ -43,7 +43,9 @@ struct VS_OUTPUT
     float4 tangent : NORMAL2;
     float4 binormal : NORMAL3;
     float2 uv : TEXCOORD0;
-    float4 singlePos : POSITION2;
+    float2 metallic : TEXCOORD1;
+    float4 albedo : TEXCOORD2;
+    float2 roughness : TEXCOORD3;
 };
 
 float3 FresnelSchlick(float cosTheta, float3 F0)
@@ -89,78 +91,77 @@ float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
 float4 PS(VS_OUTPUT input) : SV_Target
 {
 
-    float s = input.singlePos.x;
-    float t = input.singlePos.y;
+    //float st = input.singlePos.x;
 
     float3 N = normalize(input.normal.xyz);
 
     float3 fragPos = input.wpos.xyz;
-    float3 cameraPos = float3(view[0]._m30, view[0]._m31, view[0]._m32);
-    float3 V = normalize(cameraPos - fragPos);
-    float3 L = normalize(float3(1, 0, 0)); 
+    float3 cameraPos = -float3(view[0]._m02, view[0]._m12, view[0]._m22)* view[0]._m32;
+    float3 V = normalize(fragPos- cameraPos);
+    float3 L = normalize(float3(0, 1, 0)); 
     float3 H = normalize(V + L); 
     float3 T = normalize(input.tangent.xyz);
     float3 B = normalize(input.binormal.xyz);
 
-    float3 albedo;
-    float metallic;
-    float roughness;
-
-    if (s == 1.0 && t == 1.0) {
-        // Золото
-        albedo = float3(1.00, 0.71, 0.29);
-        metallic = 1.0;
-        roughness = 0.3;
-    }
-    else if (s == 2.0 && t == 1.0) {
-        // Железо
-        albedo = float3(0.56, 0.57, 0.58);
-        metallic = 1.0;
-        roughness = 0.2;
-    }
-    else if (s == 3.0 && t == 1.0) {
-        // Пластик (красный)
-        albedo = float3(0.8, 0.1, 0.1);
-        metallic = 0.0;
-        roughness = 0.4;
-    }
-    else if (s == 4.0 && t == 1.0) {
-        // Резина
-        albedo = float3(0.05, 0.05, 0.05);
-        metallic = 0.0;
-        roughness = 0.9;
-    }
-    else if (s == 5.0 && t == 1.0) {
-        // Хром
-        albedo = float3(0.95, 0.95, 0.95);
-        metallic = 1.0;
-        roughness = 0.1;
-    }
-    else if (t == 2.0) {
-        // Для второго ряда - градация roughness
-        albedo = float3(0.5, 0.5, 0.8);
-        metallic = 1.0;
-        roughness = s / 5.0; // От 0.2 до 1.0
-    }
-    else if (t == 3.0) {
-        // Для третьего ряда - градация metallic
-        albedo = float3(0.7, 0.7, 0.7);
-        metallic = s / 5.0; // От 0.2 до 1.0
-        roughness = 0.4;
-    }
-    else {
-        // По умолчанию
-        albedo = float3(0.8, 0.8, 0.8);
-        metallic = 0.5;
-        roughness = 0.5;
-    }
-
-   
+    float3 albedo = input.albedo.xyz;
+    float metallic = input.metallic.x;
+    float roughness = input.roughness.x;
+  //   if (st == 2.0 ) {
+  //      // Железо
+  //      albedo = float3(0.56, 0.57, 0.58);
+  //      metallic = 1.0;
+  //      roughness = 0.2;
+  //  }
+  //   else {
+  //       // По умолчанию
+  //       albedo = float3(0.8, 0.8, 0.8);
+  //       metallic = 0.5;
+  //       roughness = 0.5;
+  //   }
+  //  else if (s == 3.0 && s == 1.0) {
+  //      // Пластик (красный)
+  //      albedo = float3(0.8, 0.1, 0.1);
+  //      metallic = 0.0;
+  //      roughness = 0.4;
+  //  }
+  //  else if (s == 4.0 && s == 1.0) {
+  //      // Резина
+  //      albedo = float3(0.05, 0.05, 0.05);
+  //      metallic = 0.0;
+  //      roughness = 0.9;
+  //  }
+  //  else if (s == 5.0 && s == 1.0) {
+  //      // Хром
+  //      albedo = float3(0.95, 0.95, 0.95);
+  //      metallic = 1.0;
+  //      roughness = 0.1;
+  //  }
+  //  else {
+  //      // По умолчанию
+  //      albedo = float3(0.8, 0.8, 0.8);
+  //      metallic = 0.5;
+  //      roughness = 0.5;
+  //  }
+    // albedo = float3(0.56, 0.57, 0.58);
+    // metallic = 1.0;
+    // roughness = 0.2;
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);
 
-    float cosTheta = max(dot(V, N), 0.0);
+    float cosTheta = max(dot(-V, N), 0.0);
     float3 fresnel = FresnelSchlick(cosTheta, F0);
-    return float4(cosTheta.xxx, 1.0);
+    
+    // return float4(1 - fresnel, 1);
+
+   // float3 N_color = float3(normalize(st * 0.5 + 0.5),0);
+    float3 kS = fresnel;           // Скол
+    float3 kD = 1.0 - kS;           // Ско
+    kD *= 1.0 - metallic;           // Мет
+
+    float3 diffuse = albedo / PI;   // Лам
+
+    float3 finalColor = kD * diffuse + kS;
+    return float4(finalColor, 1.0);
+   // return float4(st,0, 1.0);
 
   //  float3 kS = fresnel;           // Сколько отражает
   //  float3 kD = 1.0 - kS;           // Сколько рассеивает
@@ -170,8 +171,6 @@ float4 PS(VS_OUTPUT input) : SV_Target
 
   //  float3 finalColor = kD * diffuse + kS;
 
-    // float3 N_color = H * 0.5 + 0.5;
-   //return float4(N_color, 1);
     // float ao = 1.0; // Ambient occlusion
  //   // F0 - базовый коэффициент отражения при нулевом угле
  //   float3 F0 = float3(0.04, 0.04, 0.04);
