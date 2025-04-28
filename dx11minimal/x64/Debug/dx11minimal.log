@@ -14,10 +14,10 @@ C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(927,47): warning C4244: 'a
 C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(927,36): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(962,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(962,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(963,29): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(963,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
   dx11minimal.vcxproj -> C:\Users\student-3\Source\Repos\3D\x64\Debug\dx11minimal.exe

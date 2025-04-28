@@ -949,18 +949,18 @@ void mainLoop()
 	Draw::Clear({ 0,0,0,0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
-	Rasterizer::Cull(Rasterizer::cullmode::off);
+	Rasterizer::Cull(Rasterizer::cullmode::front);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
-	int grid = 16;
+	int grid = 8;
 	int count = grid * grid;
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
 	Camera::Camera();
 
-	ConstBuf::drawerV[0] = grid/2;
-	ConstBuf::drawerV[1] = grid/2;
+	ConstBuf::drawerV[0] = grid;
+	ConstBuf::drawerV[1] = grid;
 	Draw::NullDrawer(count*6, 15);
 	Draw::Present();
 }

@@ -338,6 +338,15 @@
 
     /// ////////////////////////////////////////////////////
 
+    float3 ACESFilm(float3 x)
+    {
+        float a = 2.51f;
+        float b = 0.03f;
+        float c = 2.43f;
+        float d = 0.59f;
+        float e = 0.14f;
+        return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+    }
 
     float4 PS(VS_OUTPUT input) : SV_Target
     {
@@ -364,7 +373,7 @@
         float3 vnorm = float3(input.normal.xyz);
         //vnorm *= float3(1, -1, 1);
         //float3 camera_pos = float3(0, 0, -1);
-
+        //float cosTheta = dot(lightDir, N);
         //float3 ambient = float3(0.1, 0.1, 0.1);
 
         float3 eye = -(view[0]._m02_m12_m22) * view[0]._m32;
@@ -387,7 +396,8 @@
             roughness = pow(roughness, 2);
 
             float f0 = 0.04;
-            float kD = 1 - fresnelSchlickRoughness(max(dot(vnorm, viewDir), 0.0), f0, roughness);
+            float3 F0 = lerp(f0, albedo, metallic);
+            float kD = 1 - fresnelSchlickRoughness(max(dot(vnorm, viewDir), 0.0), F0, roughness);
             kD *= (1 - metallic) * albedo;
 
             float3 rc = 0;//env(reflectDir);
@@ -403,7 +413,6 @@
                 rc += env(reflectDir);
             }
             rc /= 1000. + 1;
-
             //return (input.vnorm/2+.5);
             return float4(rc, 1);
 
