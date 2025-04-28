@@ -168,6 +168,12 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
      float metallic;
      float roughness;
      if (t == 1.0 && s == 1.0) {
+         // Хром
+         albedo = float3(0.95, 0.95, 0.95);
+         metallic = 1.0;
+         roughness = 0.1;
+     }
+     else if (t == 3.0 && s == 1.0) {
          // Золото
          albedo = float3(1.00, 0.71, 0.29);
          metallic = 1.0;
@@ -179,23 +185,17 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
          metallic = 1.0;
          roughness = 0.2;
      }
-     else if (t == 3.0 && s == 1.0) {
+     else if (t == 4.0 && s == 1.0) {
          // Пластик (красный)
          albedo = float3(0.8, 0.1, 0.1);
          metallic = 0.0;
          roughness = 0.4;
      }
-     else if (t == 4.0 && s == 1.0) {
+     else if (t == 5.0 && s == 1.0) {
          // Резина
          albedo = float3(0.05, 0.05, 0.05);
          metallic = 0.0;
          roughness = 0.9;
-     }
-     else if (t == 5.0 && s == 1.0) {
-         // Хром
-         albedo = float3(0.95, 0.95, 0.95);
-         metallic = 1.0;
-         roughness = 0.1;
      }
      else if (s == 2.0) {
          // Для второго ряда - градация roughness
@@ -206,7 +206,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
      else if (s == 3.0) {
          // Для третьего ряда - градация metallic
          albedo = float3(0.8, 0.8, 0.8);
-         metallic = t / 5.0; // От 0.2 до 1.0
+         metallic = 1/ t  ; // От 1.0 до 0.2
          roughness = 0.5;
      }
      else {
