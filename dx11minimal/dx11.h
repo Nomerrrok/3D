@@ -959,8 +959,8 @@ void mainLoop()
 
 	Camera::Camera();
 
-	ConstBuf::drawerV[0] = grid;
-	ConstBuf::drawerV[1] = grid;
+	ConstBuf::drawerV[0] = grid/2;
+	ConstBuf::drawerV[1] = grid/2;
 	Draw::NullDrawer(count*6, 15);
 	Draw::Present();
 }

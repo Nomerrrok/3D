@@ -199,15 +199,15 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
      }
      else if (s == 2.0) {
          // Для второго ряда - градация roughness
-         albedo = float3(0.5, 0.5, 0.8);
-         metallic = 1.0;
+         albedo = float3(0.8, 0.8, 0.8);
+         metallic = 0.5;
          roughness = t / 5.0; // От 0.2 до 1.0
      }
      else if (s == 3.0) {
          // Для третьего ряда - градация metallic
-         albedo = float3(0.7, 0.7, 0.7);
+         albedo = float3(0.8, 0.8, 0.8);
          metallic = t / 5.0; // От 0.2 до 1.0
-         roughness = 0.4;
+         roughness = 0.5;
      }
      else {
          // По умолчанию
