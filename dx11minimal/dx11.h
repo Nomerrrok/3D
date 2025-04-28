@@ -921,10 +921,10 @@ namespace Camera
 
 	void Camera()
 	{
-		float t = timer::frameBeginTime*.001*0;
+		float t = timer::frameBeginTime*.001;
 		float angle = 30;
 		float a = 3.5;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, 5, 0.0f);
+		XMVECTOR Eye = XMVectorSet(cos(t)*a, cos(t) * a, 5, 0.0f);
 		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
@@ -949,10 +949,10 @@ void mainLoop()
 	Draw::Clear({ 0,0,0,0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
-	Rasterizer::Cull(Rasterizer::cullmode::front);
+	Rasterizer::Cull(Rasterizer::cullmode::off);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
-	int grid = 8;
+	int grid = 16;
 	int count = grid * grid;
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);

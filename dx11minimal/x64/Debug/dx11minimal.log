@@ -8,6 +8,9 @@ C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(864,77): warning C4244: 'a
 C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(924,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
+C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(927,47): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
 C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(927,36): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
