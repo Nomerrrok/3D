@@ -222,7 +222,7 @@ VS_OUTPUT VS(uint vID : SV_VertexID, uint iID : SV_InstanceID)
     output.normal = float4(normal, 1.0);
     output.tangent = float4(tangent, 1.0);
     output.binormal = float4(binormal, 1.0);
-    output.uv = uv;
+    output.uv = uv*8;
     output.metallic = float2(metallic,1);
     output.albedo = float4(albedo, 1);
     output.roughness = float2(roughness, 1);
