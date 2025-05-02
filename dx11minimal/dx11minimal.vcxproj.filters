@@ -30,6 +30,12 @@
     <ClInclude Include="dx11.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="PSW.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VSW.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dx11minimal.cpp">

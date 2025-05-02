@@ -130,7 +130,9 @@
     <ClInclude Include="dx11.h" />
     <ClInclude Include="dx11minimal.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="VSW.h" />
     <None Include="PS.h" />
+    <ClInclude Include="PSW.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <None Include="VS.h" />

@@ -230,7 +230,7 @@ namespace Textures
 		}
 		else
 		{
-			for (unsigned int m = 0; m < tdesc.MipLevels; m++)
+			for (unsigned int m = 0; m <= tdesc.MipLevels; m++)
 			{
 				renderTargetViewDesc.Texture2D.MipSlice = m;
 				HRESULT hr = device->CreateRenderTargetView(Texture[i].pTexture, &renderTargetViewDesc, &Texture[i].RenderTargetView[m][0]);
@@ -260,7 +260,7 @@ namespace Textures
 		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		descDSV.Flags = 0;
 
-		for (unsigned int m = 0; m < max(1, tdesc.MipLevels); m++)
+		for (unsigned int m = 0; m <= max(1, tdesc.MipLevels); m++)
 		{
 			descDSV.Texture2D.MipSlice = m;
 			HRESULT hr = device->CreateDepthStencilView(Texture[i].pDepth, &descDSV, &Texture[i].DepthStencilView[m]);
@@ -463,6 +463,8 @@ namespace Shaders {
 	{
 		CreateVS(0, nameToPatchLPCWSTR("VS.h"));
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
+		CreateVS(1, nameToPatchLPCWSTR("VSW.h"));
+		CreatePS(1, nameToPatchLPCWSTR("PSW.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -850,6 +852,8 @@ void Dx11Init()
 	
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+	//RT
+	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(500, 500), false, true);
 }
 
 
@@ -912,7 +916,7 @@ namespace Camera
 		float t = timer::frameBeginTime*.001;
 		float angle = 100;
 		float a = 3.5;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 2, cos(t)*a, 0.0f);
+		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
 		XMVECTOR At = XMVectorSet(0, -2, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
@@ -933,11 +937,11 @@ void mainLoop()
 	InputAssembler::IA(InputAssembler::topology::triList);
 	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add);
 
-	Textures::RenderTarget(0, 0);
+	Textures::RenderTarget(1, 0);
 	Draw::Clear({ 0,0,1,0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
-	Rasterizer::Cull(Rasterizer::cullmode::front);
+	Rasterizer::Cull(Rasterizer::cullmode::off);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
 	ConstBuf::ConstToVertex(4);
@@ -945,6 +949,13 @@ void mainLoop()
 
 	Camera::Camera();
 
+	Draw::NullDrawer(5, 1);
+
+	Textures::RenderTarget(0, 0);
+	Draw::Clear({ 0,0,1,0 });
+	Draw::ClearDepth();
+	Shaders::vShader(0);
+	Shaders::pShader(0);
 	Draw::NullDrawer(5, 1);
 	Draw::Present();
 }
