@@ -478,10 +478,7 @@ namespace Shaders {
 		CreateVS(1, nameToPatchLPCWSTR("VSW.h"));
 		CreatePS(1, nameToPatchLPCWSTR("PSW.h"));
 
-		CreatePS(2, nameToPatchLPCWSTR("KawaseBlur.h"));
-		CreatePS(3, nameToPatchLPCWSTR("ChromaticAberration.h"));
-		CreatePS(4, nameToPatchLPCWSTR("VHSShader.h"));
-		CreatePS(5, nameToPatchLPCWSTR("Saturation.h"));
+		CreatePS(2, nameToPatchLPCWSTR("SPS.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -598,13 +595,6 @@ namespace ConstBuf
 	XMFLOAT4 global[constCount];
 
 
-	struct {
-		XMFLOAT4 albedo;
-		float metallic;
-		float roughness;
-		XMFLOAT3 pos;
-	} ObjectParams;
-
 	int roundUp(int n, int r)
 	{
 		return n - (n % r) + r;
@@ -631,7 +621,6 @@ namespace ConstBuf
 		Create(buffer[3], sizeof(camera));
 		Create(buffer[4], sizeof(frame));
 		Create(buffer[5], sizeof(global));
-		Create(buffer[6], sizeof(ObjectParams));
 	}
 
 	template <typename T>
@@ -663,11 +652,6 @@ namespace ConstBuf
 	void ConstToPixel(int i)
 	{
 		context->PSSetConstantBuffers(i, 1, &buffer[i]);
-	}
-
-	void UpdateObjectParams()
-	{
-		context->UpdateSubresource(buffer[6], 0, NULL, &ObjectParams, 0, 0);
 	}
 
 	namespace getbyname {
@@ -987,7 +971,7 @@ void mainLoop()
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
 	Shaders::vShader(0);
-	Shaders::pShader(0);
+	Shaders::pShader(2);
 	int grid = 8;
 	int count = grid * grid;
 	ConstBuf::ConstToVertex(4);
@@ -998,10 +982,12 @@ void mainLoop()
 	ConstBuf::drawerV[0] = grid;
 	ConstBuf::drawerV[1] = grid;
 	Draw::NullDrawer(count * 6, 15);
-	Textures::CreateMipMap();
+	
 	//--------------------------------
 
-	Draw::SwitchRenderTextures();
+	Textures::RenderTarget(0, 0);
+	context->PSSetShaderResources(0, 1, &Textures::Texture[1].TextureResView);
+	Sampler::Sampler(targetshader::pixel, 0, Sampler::filter::linear, Sampler::addr::wrap, Sampler::addr::wrap);
 
 	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
 	Depth::Depth(Depth::depthmode::off);
@@ -1010,11 +996,6 @@ void mainLoop()
 	Shaders::vShader(1);
 	Shaders::pShader(1);
 	Draw::NullDrawer(1, 1);
-
-	Draw::OutputRenderTextures();
-	Shaders::pShader(2);
-	Draw::NullDrawer(1, 1);
-
 	//--------------------------
 	Draw::Present();
 }
