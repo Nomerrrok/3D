@@ -130,7 +130,7 @@ namespace Textures
 #define mainRTIndex 0
 
 	enum tType { flat, cube };
-	
+
 
 	DXGI_FORMAT dxTFormat[4] = { DXGI_FORMAT_R8G8B8A8_UNORM ,DXGI_FORMAT_R8G8B8A8_SNORM ,DXGI_FORMAT_R16G16B16A16_FLOAT ,DXGI_FORMAT_R32G32B32A32_FLOAT };
 	enum tFormat { u8, s8, s16, s32 };
@@ -260,7 +260,7 @@ namespace Textures
 		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		descDSV.Flags = 0;
 
-		for (unsigned int m = 0; m <= max(1, tdesc.MipLevels); m++)
+		for (unsigned int m = 0; m < max(1, tdesc.MipLevels); m++)
 		{
 			descDSV.Texture2D.MipSlice = m;
 			HRESULT hr = device->CreateDepthStencilView(Texture[i].pDepth, &descDSV, &Texture[i].DepthStencilView[m]);
@@ -394,8 +394,20 @@ namespace Shaders {
 		ID3DBlob* pBlob;
 	} PixelShader;
 
+	typedef struct {
+		ID3D11VertexShader* pShader;
+		ID3DBlob* pBlob;
+	} PostProcessVertexShader;
+
+	typedef struct {
+		ID3D11PixelShader* pShader;
+		ID3DBlob* pBlob;
+	} PostProcessPixelShader;
+
 	VertexShader VS[255];
 	PixelShader PS[255];
+
+	PixelShader PPPS[254];
 
 	ID3DBlob* pErrorBlob;
 
@@ -450,7 +462,7 @@ namespace Shaders {
 		HRESULT hr;
 
 		hr = D3DCompileFromFile(name, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, "PS", "ps_4_1", NULL, NULL, &PS[i].pBlob, &pErrorBlob);
-		CompilerLog(name, hr, "vertex shader compiled: ");
+		CompilerLog(name, hr, "pixel shader compiled: ");
 
 		if (hr == S_OK)
 		{
@@ -465,6 +477,11 @@ namespace Shaders {
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 		CreateVS(1, nameToPatchLPCWSTR("VSW.h"));
 		CreatePS(1, nameToPatchLPCWSTR("PSW.h"));
+
+		CreatePS(2, nameToPatchLPCWSTR("KawaseBlur.h"));
+		CreatePS(3, nameToPatchLPCWSTR("ChromaticAberration.h"));
+		CreatePS(4, nameToPatchLPCWSTR("VHSShader.h"));
+		CreatePS(5, nameToPatchLPCWSTR("Saturation.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -482,7 +499,7 @@ namespace Shaders {
 namespace Sampler
 {
 	enum class filter { linear, point, minPoint_magLinear };
-	enum class addr {clamp,wrap};
+	enum class addr { clamp, wrap };
 
 	ID3D11SamplerState* pSampler[3][2][2];//filter, addressU, addressV
 	ID3D11SamplerState* pSamplerComp;//for shadowmapping
@@ -548,41 +565,49 @@ namespace Sampler
 
 namespace ConstBuf
 {
-	ID3D11Buffer* buffer[6];
+	ID3D11Buffer* buffer[8];
 
 #define constCount 32
 
-	//b0 - use "params" label in shader
-	float drawerV[constCount];//update per draw call
 
-	//b1 - use "params" label in shader
-	float drawerP[constCount];//update per draw call
+	float drawerV[constCount];
 
-	//b2
+
+	float drawerP[constCount];
+
+
 	struct {
 		XMMATRIX model;
 		float hilight;
-	} drawerMat;//update per draw call
+	} drawerMat;
 
-	//b3 
+
 	struct {
 		XMMATRIX world[2];
 		XMMATRIX view[2];
 		XMMATRIX proj[2];
-	} camera;//update per camera set
+	} camera;
 
-	//b4
+
 	struct {
 		XMFLOAT4 time;
 		XMFLOAT4 aspect;
-	} frame;//update per frame
+	} frame;
 
-	//b5
-	XMFLOAT4 global[constCount];//update once on start
+
+	XMFLOAT4 global[constCount];
+
+
+	struct {
+		XMFLOAT4 albedo;
+		float metallic;
+		float roughness;
+		XMFLOAT3 pos;
+	} ObjectParams;
 
 	int roundUp(int n, int r)
 	{
-		return 	n - (n % r) + r;
+		return n - (n % r) + r;
 	}
 
 	void Create(ID3D11Buffer*& buf, int size)
@@ -606,6 +631,7 @@ namespace ConstBuf
 		Create(buffer[3], sizeof(camera));
 		Create(buffer[4], sizeof(frame));
 		Create(buffer[5], sizeof(global));
+		Create(buffer[6], sizeof(ObjectParams));
 	}
 
 	template <typename T>
@@ -621,12 +647,12 @@ namespace ConstBuf
 
 	void UpdateDrawerMat()
 	{
-		context->UpdateSubresource(ConstBuf::buffer[2], 0, NULL, &drawerMat, 0, 0);
+		context->UpdateSubresource(buffer[2], 0, NULL, &drawerMat, 0, 0);
 	}
 
 	void UpdateCamera()
 	{
-		context->UpdateSubresource(ConstBuf::buffer[3], 0, NULL, &camera, 0, 0);
+		context->UpdateSubresource(buffer[3], 0, NULL, &camera, 0, 0);
 	}
 
 	void ConstToVertex(int i)
@@ -639,11 +665,14 @@ namespace ConstBuf
 		context->PSSetConstantBuffers(i, 1, &buffer[i]);
 	}
 
+	void UpdateObjectParams()
+	{
+		context->UpdateSubresource(buffer[6], 0, NULL, &ObjectParams, 0, 0);
+	}
 
 	namespace getbyname {
 		enum { drawerV, drawerP, drawerMat, camera, frame, global };
 	}
-
 }
 
 namespace Blend
@@ -768,7 +797,7 @@ namespace Depth
 namespace Device
 {
 
-	#define DirectXDebugMode false
+#define DirectXDebugMode false
 
 	D3D_DRIVER_TYPE	driverType = D3D_DRIVER_TYPE_NULL;
 
@@ -849,11 +878,13 @@ void Dx11Init()
 	ConstBuf::Init();
 	Sampler::Init();
 	Shaders::Init();
-	
+
 	//main RT
 	Textures::Create(0, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
-	//RT
-	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(500, 500), false, true);
+	//rt1
+	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+	//rt2
+	Textures::Create(2, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 }
 
 
@@ -877,7 +908,19 @@ namespace Draw
 		context->ClearDepthStencilView(Textures::Texture[Textures::currentRT].DepthStencilView[0], D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	void NullDrawer(int quadCount, unsigned int instances = 1)
+	void SwitchRenderTextures() {
+		int index = 3 - Textures::currentRT;
+		Textures::RenderTarget(index, 0);
+		context->PSSetShaderResources(0, 1, &Textures::Texture[3 - index].TextureResView);
+	}
+
+	void OutputRenderTextures() {
+		int index = Textures::currentRT;
+		Textures::RenderTarget(0, 0);
+		context->PSSetShaderResources(0, 1, &Textures::Texture[index].TextureResView);
+	}
+
+	void NullDrawer(int quadCount, unsigned int instances)
 	{
 		ConstBuf::Update(0, ConstBuf::drawerV);
 		ConstBuf::ConstToVertex(0);
@@ -913,11 +956,11 @@ namespace Camera
 
 	void Camera()
 	{
-		float t = timer::frameBeginTime*.001;
-		float angle = 100;
+		float t = timer::frameBeginTime * 0.001;
+		float angle = 70;
 		float a = 3.5;
-		XMVECTOR Eye = XMVectorSet(sin(t)*a, 0, cos(t)*a, 0.0f);
-		XMVECTOR At = XMVectorSet(0, -2, 0, 0.0f);
+		XMVECTOR Eye = XMVectorSet(sin(t) * a, 0, cos(t) * a, 0.0f);
+		XMVECTOR At = XMVectorSet(0, 0, 0, 0.0f);
 		XMVECTOR Up = XMVectorSet(0, 1, 0, 0.0f);
 
 		ConstBuf::camera.world[0] = XMMatrixIdentity();
@@ -938,24 +981,40 @@ void mainLoop()
 	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add);
 
 	Textures::RenderTarget(1, 0);
-	Draw::Clear({ 0,0,1,0 });
+
+	Draw::Clear({ 0,0,0,0 });
 	Draw::ClearDepth();
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
 	Shaders::vShader(0);
 	Shaders::pShader(0);
+	int grid = 8;
+	int count = grid * grid;
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
 	Camera::Camera();
 
-	Draw::NullDrawer(5, 1);
+	ConstBuf::drawerV[0] = grid;
+	ConstBuf::drawerV[1] = grid;
+	Draw::NullDrawer(count * 6, 15);
+	Textures::CreateMipMap();
+	//--------------------------------
 
-	Textures::RenderTarget(0, 0);
-	Draw::Clear({ 0,0,1,0 });
-	Draw::ClearDepth();
-	Shaders::vShader(0);
-	Shaders::pShader(0);
-	Draw::NullDrawer(5, 1);
+	Draw::SwitchRenderTextures();
+
+	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
+	Depth::Depth(Depth::depthmode::off);
+	Rasterizer::Cull(Rasterizer::cullmode::off);
+
+	Shaders::vShader(1);
+	Shaders::pShader(1);
+	Draw::NullDrawer(1, 1);
+
+	Draw::OutputRenderTextures();
+	Shaders::pShader(2);
+	Draw::NullDrawer(1, 1);
+
+	//--------------------------
 	Draw::Present();
 }

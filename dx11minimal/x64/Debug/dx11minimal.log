@@ -1,17 +1,35 @@
 ﻿  dx11minimal.cpp
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(854,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(883,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(854,77): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(883,77): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(916,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(885,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(919,49): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(885,77): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-C:\Users\student-3\source\repos\3D\dx11minimal\dx11.h(919,36): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(887,84): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
   (compiling source file 'dx11minimal.cpp')
   
-  dx11minimal.vcxproj -> C:\Users\student-3\Source\Repos\3D\x64\Debug\dx11minimal.exe
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(887,77): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(959,11): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(962,52): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(962,37): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(998,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
+C:\Users\artem\source\repos\3D9\dx11minimal\dx11.h(999,25): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+  (compiling source file 'dx11minimal.cpp')
+  
+  dx11minimal.vcxproj -> C:\Users\artem\Source\Repos\3D9\x64\Debug\dx11minimal.exe
