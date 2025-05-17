@@ -1,14 +1,16 @@
+Texture2D shadowMap : register(t0);
+SamplerState samp : register(s0);
+
 struct VS_OUTPUT
 {
     float4 pos : SV_POSITION;
     float2 uv : TEXCOORD0;
 };
 
-Texture2D renderTexture : register(t0);
-SamplerState samplerState : register(s0);
-
 float4 PS(VS_OUTPUT input) : SV_Target
 {
-    //return float4(1,1,0,1);
-    return float4(renderTexture.SampleLevel(samplerState, input.uv,0).rgb,1);
+    float depth = shadowMap.Sample(samp, input.uv).r;
+
+// Визуализируем глубину в оттенках серого
+return float4(depth, depth, depth, 1.0);
 }

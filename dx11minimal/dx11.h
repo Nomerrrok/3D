@@ -477,8 +477,8 @@ namespace Shaders {
 		CreatePS(0, nameToPatchLPCWSTR("PS.h"));
 		CreateVS(1, nameToPatchLPCWSTR("VSW.h"));
 		CreatePS(1, nameToPatchLPCWSTR("PSW.h"));
-
-		CreatePS(2, nameToPatchLPCWSTR("SPS.h"));
+		CreateVS(2, nameToPatchLPCWSTR("VSS.h"));
+		CreatePS(2, nameToPatchLPCWSTR("PSS.h"));
 	}
 
 	void vShader(unsigned int n)
@@ -868,7 +868,7 @@ void Dx11Init()
 	//rt1
 	Textures::Create(1, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
 	//rt2
-	Textures::Create(2, Textures::tType::flat, Textures::tFormat::u8, XMFLOAT2(width, height), false, true);
+	Textures::Create(2, Textures::tType::flat, Textures::tFormat::s16, XMFLOAT2(width, height), false, true);
 }
 
 
@@ -954,9 +954,20 @@ namespace Camera
 		ConstBuf::UpdateCamera();
 		ConstBuf::ConstToVertex(3);
 		ConstBuf::ConstToPixel(3);
+		// Настройка камеры для источника света (например, directional light)
+		XMVECTOR lightDir = XMVectorSet(-0.5f, -1.0f, -0.3f, 0.0f); // направление света
+		XMVECTOR lightTarget = XMVectorZero();                      // куда светим
+		XMVECTOR lightPos = XMVectorAdd(lightTarget, XMVectorScale(XMVector3Normalize(lightDir), -20.0f)); // "камера" света
+		XMVECTOR lightUp = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+		// Ортографическая проекция (т.к. directional light, не point)
+		XMMATRIX lightView = XMMatrixLookAtLH(lightPos, lightTarget, lightUp);
+		XMMATRIX lightProj = XMMatrixOrthographicLH(20.0f, 20.0f, 0.01f, 100.0f);
+
+		ConstBuf::camera.view[1] = XMMatrixTranspose(lightView);
+		ConstBuf::camera.proj[1] = XMMatrixTranspose(lightProj);
 	}
 }
-
 void mainLoop()
 {
 	frameConst();
@@ -964,38 +975,42 @@ void mainLoop()
 	InputAssembler::IA(InputAssembler::topology::triList);
 	Blend::Blending(Blend::blendmode::alpha, Blend::blendop::add);
 
-	Textures::RenderTarget(1, 0);
-
+	Textures::RenderTarget(2, 0);                  
 	Draw::Clear({ 0,0,0,0 });
 	Draw::ClearDepth();
+
 	Depth::Depth(Depth::depthmode::on);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
-	Shaders::vShader(0);
-	Shaders::pShader(2);
+
+	Shaders::vShader(2);                            
+	Shaders::pShader(2);                            
+
 	int grid = 8;
 	int count = grid * grid;
 	ConstBuf::ConstToVertex(4);
 	ConstBuf::ConstToPixel(4);
 
-	Camera::Camera();
+	Camera::Camera();                              
 
 	ConstBuf::drawerV[0] = grid;
 	ConstBuf::drawerV[1] = grid;
-	Draw::NullDrawer(count * 6, 15);
+
+	Draw::NullDrawer(count * 6, 15);           
 	
-	//--------------------------------
+	Textures::RenderTarget(0, 0);                  
+	Draw::Clear({ 0,0,0,0 });
 
-	Textures::RenderTarget(0, 0);
-	context->PSSetShaderResources(0, 1, &Textures::Texture[1].TextureResView);
-	Sampler::Sampler(targetshader::pixel, 0, Sampler::filter::linear, Sampler::addr::wrap, Sampler::addr::wrap);
-
-	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
 	Depth::Depth(Depth::depthmode::off);
 	Rasterizer::Cull(Rasterizer::cullmode::off);
+	Blend::Blending(Blend::blendmode::off, Blend::blendop::add);
 
-	Shaders::vShader(1);
-	Shaders::pShader(1);
-	Draw::NullDrawer(1, 1);
-	//--------------------------
-	Draw::Present();
+	context->PSSetShaderResources(0, 1, &Textures::Texture[2].TextureResView);  
+	Sampler::Sampler(targetshader::pixel, 0, Sampler::filter::linear, Sampler::addr::clamp, Sampler::addr::clamp);
+
+	Shaders::vShader(1);                          
+	Shaders::pShader(1);                        
+
+	Draw::NullDrawer(6, 1);            
+	
+	Draw::Present();                              
 }

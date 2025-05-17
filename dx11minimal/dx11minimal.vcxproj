@@ -130,6 +130,8 @@
     <ClInclude Include="dx11.h" />
     <ClInclude Include="dx11minimal.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="PSS.h" />
+    <ClInclude Include="VSS.h" />
     <ClInclude Include="VSW.h" />
     <None Include="PS.h" />
     <ClInclude Include="PSW.h" />
@@ -139,7 +141,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dx11minimal.cpp" />
-    <ClCompile Include="SPS.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="dx11minimal.rc" />
